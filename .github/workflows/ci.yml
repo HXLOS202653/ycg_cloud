@@ -27,9 +27,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-v7-${{ hashFiles('cloud-backend/go.sum') }}
+        key: ${{ runner.os }}-go-v8-${{ hashFiles('cloud-backend/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-v7-
+          ${{ runner.os }}-go-v8-
 
     - name: Download dependencies
       working-directory: cloud-backend
@@ -50,7 +50,7 @@ jobs:
 
     - name: Install golangci-lint
       run: |
-        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.54.2
+        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.62.2
 
     - name: Run golangci-lint
       working-directory: cloud-backend
@@ -73,9 +73,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-v7-${{ hashFiles('cloud-backend/go.sum') }}
+        key: ${{ runner.os }}-go-v8-${{ hashFiles('cloud-backend/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-v7-
+          ${{ runner.os }}-go-v8-
 
     - name: Download dependencies
       working-directory: cloud-backend
@@ -162,9 +162,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-v7-${{ hashFiles('cloud-backend/go.sum') }}
+        key: ${{ runner.os }}-go-v8-${{ hashFiles('cloud-backend/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-v7-
+          ${{ runner.os }}-go-v8-
 
     - name: Download dependencies
       working-directory: cloud-backend
@@ -213,9 +213,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-v7-${{ hashFiles('cloud-backend/go.sum') }}
+        key: ${{ runner.os }}-go-v8-${{ hashFiles('cloud-backend/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-v7-
+          ${{ runner.os }}-go-v8-
 
     - name: Download dependencies
       working-directory: cloud-backend
@@ -259,9 +259,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-v7-${{ hashFiles('cloud-backend/go.sum') }}
+        key: ${{ runner.os }}-go-v8-${{ hashFiles('cloud-backend/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-v7-
+          ${{ runner.os }}-go-v8-
 
     - name: Download dependencies
       working-directory: cloud-backend
@@ -325,9 +325,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-v7-${{ hashFiles('cloud-backend/go.sum') }}
+        key: ${{ runner.os }}-go-v8-${{ hashFiles('cloud-backend/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-v7-
+          ${{ runner.os }}-go-v8-
 
     - name: Download dependencies
       working-directory: cloud-backend
