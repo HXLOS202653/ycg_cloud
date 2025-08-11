@@ -226,7 +226,3 @@ issues:
 severity:
   default-severity: error
   case-sensitive: false
-  rules:
-    - linters:
-        - dupl
-      severity: info
