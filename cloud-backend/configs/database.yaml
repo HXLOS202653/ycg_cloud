@@ -2,11 +2,11 @@
 database:
   # MySQL 8.0.31 配置
   mysql:
-    host: "dbconn.sealosbja.site"
-    port: 36973
-    username: "root"
-    password: "hxl202653"
-    database: "ycgcloud"
+    host: "${MYSQL_HOST}"
+    port: ${MYSQL_PORT}
+    username: "${MYSQL_USER}"
+    password: "${MYSQL_PASSWORD}"
+    database: "${MYSQL_DATABASE}"
     charset: "utf8mb4"
     parse_time: true
     loc: "Local"
@@ -20,12 +20,12 @@ database:
     conn_max_lifetime: "1h"
     conn_max_idle_time: "10m"
 
-  # MongoDB 6.0 配置
+  # MongoDB 配置
   mongodb:
-    uri: "mongodb://root:hxl202653@dbconn.sealosbja.site:42033/?directConnection=true"
-    database: "ycgcloud"
-    username: "root"
-    password: "hxl202653"
+    uri: "${MONGODB_URI}"
+    database: "${MONGODB_DATABASE}"
+    username: "${MONGODB_USER}"
+    password: "${MONGODB_PASSWORD}"
     connect_timeout: "10s"
     socket_timeout: "30s"
     server_sel_timeout: "30s"
@@ -37,9 +37,9 @@ database:
 
   # Redis 7.0+ 配置
   redis:
-    host: "dbconn.sealosbja.site"
-    port: 49169
-    password: "jdsj6j67"
+    host: "${REDIS_HOST}"
+    port: ${REDIS_PORT}
+    password: "${REDIS_PASSWORD}"
     db: 0
     username: "default"
     
