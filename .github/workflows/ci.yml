@@ -32,9 +32,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-v18-${{ hashFiles('cloud-backend/go.sum') }}
+        key: ${{ runner.os }}-go-v19-${{ hashFiles('cloud-backend/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-v18-
+          ${{ runner.os }}-go-v19-
 
     - name: Download dependencies
       working-directory: cloud-backend
@@ -78,9 +78,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-v18-${{ hashFiles('cloud-backend/go.sum') }}
+        key: ${{ runner.os }}-go-v19-${{ hashFiles('cloud-backend/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-v18-
+          ${{ runner.os }}-go-v19-
 
     - name: Download dependencies
       working-directory: cloud-backend
@@ -137,7 +137,7 @@ jobs:
         env:
           MONGO_INITDB_DATABASE: ycgcloud_test
         options: >-
-          --health-cmd="mongosh --eval 'db.runCommand({ ping: 1 })'"
+          --health-cmd="mongo --eval 'db.runCommand({ ping: 1 })'"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=3
@@ -167,9 +167,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-v18-${{ hashFiles('cloud-backend/go.sum') }}
+        key: ${{ runner.os }}-go-v19-${{ hashFiles('cloud-backend/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-v18-
+          ${{ runner.os }}-go-v19-
 
     - name: Download dependencies
       working-directory: cloud-backend
@@ -180,7 +180,7 @@ jobs:
         echo "Waiting for MySQL..."
         timeout 60 bash -c 'until mysqladmin ping -h 127.0.0.1 -P 3306 -u test -ptest --silent; do sleep 1; done'
         echo "Waiting for MongoDB..."
-        timeout 60 bash -c 'until mongosh --host 127.0.0.1:27017 --eval "db.runCommand({ ping: 1 })" --quiet; do sleep 1; done'
+        timeout 60 bash -c 'until mongo --host 127.0.0.1:27017 --eval "db.runCommand({ ping: 1 })" --quiet; do sleep 1; done'
         echo "Waiting for Redis..."
         timeout 60 bash -c 'until redis-cli -h 127.0.0.1 -p 6379 ping; do sleep 1; done'
 
@@ -218,9 +218,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-v18-${{ hashFiles('cloud-backend/go.sum') }}
+        key: ${{ runner.os }}-go-v19-${{ hashFiles('cloud-backend/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-v18-
+          ${{ runner.os }}-go-v19-
 
     - name: Download dependencies
       working-directory: cloud-backend
@@ -268,9 +268,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-v18-${{ hashFiles('cloud-backend/go.sum') }}
+        key: ${{ runner.os }}-go-v19-${{ hashFiles('cloud-backend/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-v18-
+          ${{ runner.os }}-go-v19-
 
     - name: Download dependencies
       working-directory: cloud-backend
@@ -334,9 +334,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-v18-${{ hashFiles('cloud-backend/go.sum') }}
+        key: ${{ runner.os }}-go-v19-${{ hashFiles('cloud-backend/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-v18-
+          ${{ runner.os }}-go-v19-
 
     - name: Download dependencies
       working-directory: cloud-backend
