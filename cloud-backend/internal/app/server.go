@@ -2,9 +2,10 @@
 package app
 
 import (
+	"github.com/gin-gonic/gin"
+
 	"github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/config"
 	"github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/pkg/database"
-	"github.com/gin-gonic/gin"
 )
 
 // Server represents the main application server.

@@ -4,8 +4,9 @@ package app
 import (
 	"net/http"
 
-	"github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/handler"
 	"github.com/gin-gonic/gin"
+
+	"github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/handler"
 )
 
 // addRoutes configures all API routes for the application.
