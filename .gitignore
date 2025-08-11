@@ -1,0 +1,89 @@
+# 依赖文件
+node_modules/
+vendor/
+pip_packages/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# 环境配置文件
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+config/local.json
+config/production.json
+
+# 日志文件
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 运行时文件
+*.pid
+*.seed
+*.pid.lock
+
+# 构建输出
+build/
+dist/
+out/
+target/
+
+# IDE和编辑器文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 数据库文件
+*.db
+*.sqlite
+*.sqlite3
+
+# 上传文件存储目录
+uploads/
+storage/
+temp/
+tmp/
+
+# 密钥和证书文件
+*.key
+*.pem
+*.crt
+*.p12
+
+# 缓存文件
+.cache/
+.parcel-cache/
+.next/
+.nuxt/
+
+# 测试覆盖率报告
+coverage/
+.nyc_output/
+
+# Docker文件
+.dockerignore
+docker-compose.override.yml
+
+# 备份文件
+*.bak
+*.backup
+*.orig
+
+# 云盘相关临时文件
+chunks/
+temp_uploads/
+processing/
