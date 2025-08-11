@@ -71,64 +71,57 @@ func TestLoadConfig_DefaultValues(t *testing.T) {
 }
 
 func TestLoadConfig_EnvironmentOverrides(t *testing.T) {
-	// Setup environment variables
-	testCases := []struct {
-		envVar   string
-		envValue string
-		check    func(*Config) bool
-	}{
-		{
-			envVar:   "APP_NAME",
-			envValue: "test-app",
-			check:    func(c *Config) bool { return c.App.Name == "test-app" },
-		},
-		{
-			envVar:   "APP_VERSION",
-			envValue: "2.0.0",
-			check:    func(c *Config) bool { return c.App.Version == "2.0.0" },
-		},
-		{
-			envVar:   "APP_DEBUG",
-			envValue: "true",
-			check:    func(c *Config) bool { return c.App.Debug == true },
-		},
-		{
-			envVar:   "SERVER_PORT",
-			envValue: ":9000",
-			check:    func(c *Config) bool { return c.Server.Port == ":9000" },
-		},
+	t.Run("app_name", func(t *testing.T) {
+		testEnvOverride(t, "APP_NAME", "test-app", func(c *Config) bool { return c.App.Name == "test-app" })
+	})
+	t.Run("app_version", func(t *testing.T) {
+		testEnvOverride(t, "APP_VERSION", "2.0.0", func(c *Config) bool { return c.App.Version == "2.0.0" })
+	})
+	t.Run("app_debug", func(t *testing.T) {
+		testEnvOverride(t, "APP_DEBUG", "true", func(c *Config) bool { return c.App.Debug == true })
+	})
+	t.Run("server_port", func(t *testing.T) {
+		testEnvOverride(t, "SERVER_PORT", ":9000", func(c *Config) bool { return c.Server.Port == ":9000" })
+	})
+}
+
+// testEnvOverride is a helper function to test environment variable overrides
+func testEnvOverride(t *testing.T, envVar, envValue string, check func(*Config) bool) {
+	// Setup
+	originalValue := os.Getenv(envVar)
+	defer restoreEnv(t, envVar, originalValue)
+
+	// Set test environment
+	setTestEnv(t, envVar, envValue)
+
+	// Execute
+	cfg, err := LoadConfig()
+
+	// Assert
+	require.NoError(t, err)
+	assert.True(t, check(cfg), "Environment variable %s not properly set", envVar)
+}
+
+// restoreEnv restores environment variable to original value
+func restoreEnv(t *testing.T, envVar, originalValue string) {
+	if originalValue != "" {
+		if err := os.Setenv(envVar, originalValue); err != nil {
+			t.Logf("Failed to restore %s: %v", envVar, err)
+		}
+	} else {
+		if err := os.Unsetenv(envVar); err != nil {
+			t.Logf("Failed to unset %s: %v", envVar, err)
+		}
 	}
+}
 
-	for _, tc := range testCases {
-		t.Run(tc.envVar, func(t *testing.T) {
-			// Setup
-			originalValue := os.Getenv(tc.envVar)
-			defer func() {
-				if originalValue != "" {
-					if err := os.Setenv(tc.envVar, originalValue); err != nil {
-						t.Logf("Failed to restore %s: %v", tc.envVar, err)
-					}
-				} else {
-					if err := os.Unsetenv(tc.envVar); err != nil {
-						t.Logf("Failed to unset %s: %v", tc.envVar, err)
-					}
-				}
-			}()
-
-			if err := os.Setenv(tc.envVar, tc.envValue); err != nil {
-				t.Fatalf("Failed to set %s: %v", tc.envVar, err)
-			}
-			if err := os.Setenv("APP_ENV", "test"); err != nil {
-				t.Fatalf("Failed to set APP_ENV: %v", err)
-			}
-
-			// Execute
-			cfg, err := LoadConfig()
-
-			// Assert
-			require.NoError(t, err)
-			assert.True(t, tc.check(cfg), "Environment variable %s not properly set", tc.envVar)
-		})
+// setTestEnv sets environment variables for testing
+func setTestEnv(t *testing.T, envVar, envValue string) {
+	if err := os.Setenv(envVar, envValue); err != nil {
+		t.Fatalf("Failed to set %s: %v", envVar, err)
+	}
+	if err := os.Setenv("APP_ENV", "test"); err != nil {
+		t.Fatalf("Failed to set APP_ENV: %v", err)
 	}
 }
 

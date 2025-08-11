@@ -190,8 +190,12 @@ func GetTestConfig() *TestConfigData {
 
 // SetupTestEnvironment sets up environment variables for testing.
 func SetupTestEnvironment() {
-	os.Setenv("APP_ENV", "test")
-	os.Setenv("APP_DEBUG", "true")
+	if err := os.Setenv("APP_ENV", "test"); err != nil {
+		log.Printf("Failed to set APP_ENV: %v", err)
+	}
+	if err := os.Setenv("APP_DEBUG", "true"); err != nil {
+		log.Printf("Failed to set APP_DEBUG: %v", err)
+	}
 }
 
 // CleanupTestEnvironment cleans up environment variables after testing.
