@@ -1,8 +1,6 @@
 module github.com/HXLOS202653/ycg_cloud/cloud-backend
 
-go 1.23.0
-
-toolchain go1.23.12
+go 1.24
 
 require (
 	github.com/gin-contrib/cors v1.5.0
