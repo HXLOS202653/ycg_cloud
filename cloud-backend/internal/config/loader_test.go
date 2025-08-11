@@ -105,14 +105,22 @@ func TestLoadConfig_EnvironmentOverrides(t *testing.T) {
 			originalValue := os.Getenv(tc.envVar)
 			defer func() {
 				if originalValue != "" {
-					os.Setenv(tc.envVar, originalValue)
+					if err := os.Setenv(tc.envVar, originalValue); err != nil {
+						t.Logf("Failed to restore %s: %v", tc.envVar, err)
+					}
 				} else {
-					os.Unsetenv(tc.envVar)
+					if err := os.Unsetenv(tc.envVar); err != nil {
+						t.Logf("Failed to unset %s: %v", tc.envVar, err)
+					}
 				}
 			}()
 
-			os.Setenv(tc.envVar, tc.envValue)
-			os.Setenv("APP_ENV", "test")
+			if err := os.Setenv(tc.envVar, tc.envValue); err != nil {
+				t.Fatalf("Failed to set %s: %v", tc.envVar, err)
+			}
+			if err := os.Setenv("APP_ENV", "test"); err != nil {
+				t.Fatalf("Failed to set APP_ENV: %v", err)
+			}
 
 			// Execute
 			cfg, err := LoadConfig()
@@ -309,8 +317,14 @@ func TestMonitorConfig_Structure(t *testing.T) {
 
 // Benchmark tests
 func BenchmarkLoadConfig(b *testing.B) {
-	os.Setenv("APP_ENV", "test")
-	defer os.Unsetenv("APP_ENV")
+	if err := os.Setenv("APP_ENV", "test"); err != nil {
+		b.Fatalf("Failed to set APP_ENV: %v", err)
+	}
+	defer func() {
+		if err := os.Unsetenv("APP_ENV"); err != nil {
+			b.Logf("Failed to unset APP_ENV: %v", err)
+		}
+	}()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

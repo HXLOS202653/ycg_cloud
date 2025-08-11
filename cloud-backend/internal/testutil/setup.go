@@ -2,6 +2,7 @@
 package testutil
 
 import (
+	"log"
 	"os"
 	"testing"
 	"time"
@@ -195,8 +196,12 @@ func SetupTestEnvironment() {
 
 // CleanupTestEnvironment cleans up environment variables after testing.
 func CleanupTestEnvironment() {
-	os.Unsetenv("APP_ENV")
-	os.Unsetenv("APP_DEBUG")
+	if err := os.Unsetenv("APP_ENV"); err != nil {
+		log.Printf("Failed to unset APP_ENV: %v", err)
+	}
+	if err := os.Unsetenv("APP_DEBUG"); err != nil {
+		log.Printf("Failed to unset APP_DEBUG: %v", err)
+	}
 }
 
 // SkipIfShort skips the test if running in short mode.
