@@ -1,0 +1,82 @@
+# 测试环境配置文件
+app:
+  name: "ycg-cloud-test"
+  version: "1.0.0-test"
+  environment: "test"
+  debug: true
+
+server:
+  host: "localhost"
+  port: ":8081"  # 不同的端口避免冲突
+  read_timeout: "10s"
+  write_timeout: "10s"
+  idle_timeout: "30s"
+
+database:
+  # MySQL 测试配置 - 使用内存数据库或测试数据库
+  mysql:
+    host: "localhost"
+    port: 3306
+    username: "test"
+    password: "test"
+    database: "ycgcloud_test"
+    charset: "utf8mb4"
+    parse_time: true
+    loc: "Local"
+    timeout: "5s"
+    read_timeout: "10s"
+    write_timeout: "10s"
+    max_open_conns: 5
+    max_idle_conns: 2
+    conn_max_lifetime: "30m"
+    conn_max_idle_time: "10m"
+
+  # MongoDB 测试配置
+  mongodb:
+    uri: "mongodb://localhost:27017"
+    database: "ycgcloud_test"
+    username: ""
+    password: ""
+    connect_timeout: "5s"
+    timeout: "10s"
+    max_pool_size: 5
+    min_pool_size: 1
+
+  # Redis 测试配置 - 使用不同的数据库
+  redis:
+    host: "localhost"
+    port: 6379
+    password: ""
+    database: 1  # 使用数据库1用于测试
+    pool_size: 5
+    min_idle_conns: 1
+    dial_timeout: "3s"
+    read_timeout: "2s"
+    write_timeout: "2s"
+    pool_timeout: "3s"
+    idle_timeout: "2m"
+
+# 存储配置
+storage:
+  type: "local"
+  local_path: "./test_uploads"
+  max_file_size: "10MB"
+  allowed_types: ["image/jpeg", "image/png", "application/pdf", "text/plain"]
+
+# JWT认证配置
+auth:
+  jwt_secret: "test-secret-key-for-jwt-very-long-for-security"
+  token_expiry: "1h"
+  refresh_expiry: "24h"
+  bcrypt_cost: 4  # 测试环境使用较低的成本
+
+# 日志配置
+log:
+  level: "debug"
+  format: "text"
+  output: "stdout"
+
+# 监控配置
+monitor:
+  enabled: true
+  metrics_url: "/metrics"

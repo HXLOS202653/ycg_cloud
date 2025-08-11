@@ -1,0 +1,34 @@
+# 服务器配置文件
+server:
+  host: "0.0.0.0"
+  port: ":8080"
+  read_timeout: 30    # 秒
+  write_timeout: 30   # 秒
+  idle_timeout: 120   # 秒
+
+app:
+  name: "YCG Cloud Storage"
+  version: "1.0.0"
+  environment: "development"
+  debug: true
+
+auth:
+  jwt_secret: "your-jwt-secret-key-here"
+  jwt_expiry: "24h"
+  refresh_expiry: "168h"  # 7 days
+
+storage:
+  type: "local"
+  local:
+    base_path: "./uploads"
+    max_file_size: 104857600  # 100MB
+
+log:
+  level: "info"
+  format: "json"
+  file: "logs/app.log"
+
+monitor:
+  enabled: true
+  port: ":9090"
+  path: "/metrics"

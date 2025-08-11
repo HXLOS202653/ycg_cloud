@@ -1,0 +1,97 @@
+version: '3.8'
+
+services:
+  # MySQL 测试数据库
+  mysql-test:
+    image: mysql:8.0
+    container_name: ycg-mysql-test
+    environment:
+      MYSQL_ROOT_PASSWORD: test
+      MYSQL_DATABASE: ycgcloud_test
+      MYSQL_USER: test
+      MYSQL_PASSWORD: test
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_test_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 5s
+      retries: 5
+    networks:
+      - test-network
+
+  # MongoDB 测试数据库
+  mongodb-test:
+    image: mongo:6.0
+    container_name: ycg-mongodb-test
+    environment:
+      MONGO_INITDB_DATABASE: ycgcloud_test
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongodb_test_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand({ ping: 1 })"]
+      timeout: 5s
+      retries: 5
+    networks:
+      - test-network
+
+  # Redis 测试数据库
+  redis-test:
+    image: redis:7-alpine
+    container_name: ycg-redis-test
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_test_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      timeout: 5s
+      retries: 5
+    networks:
+      - test-network
+
+  # 应用程序测试容器
+  app-test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: ycg-app-test
+    environment:
+      APP_ENV: test
+      MYSQL_HOST: mysql-test
+      MYSQL_PORT: 3306
+      MYSQL_USER: test
+      MYSQL_PASSWORD: test
+      MYSQL_DATABASE: ycgcloud_test
+      MONGODB_URI: mongodb://mongodb-test:27017
+      MONGODB_DATABASE: ycgcloud_test
+      REDIS_HOST: redis-test
+      REDIS_PORT: 6379
+    depends_on:
+      mysql-test:
+        condition: service_healthy
+      mongodb-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - /app/bin  # 避免覆盖容器内的 bin 目录
+    working_dir: /app
+    command: make test-integration
+    networks:
+      - test-network
+
+volumes:
+  mysql_test_data:
+  mongodb_test_data:
+  redis_test_data:
+
+networks:
+  test-network:
+    driver: bridge

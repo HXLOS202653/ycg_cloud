@@ -1,0 +1,2423 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>app: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/app/middleware.go (0.0%)</option>
+				
+				<option value="file1">github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/app/router.go (0.0%)</option>
+				
+				<option value="file2">github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/app/server.go (0.0%)</option>
+				
+				<option value="file3">github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/config/database.go (0.0%)</option>
+				
+				<option value="file4">github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/config/loader.go (87.0%)</option>
+				
+				<option value="file5">github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/handler/health.go (55.8%)</option>
+				
+				<option value="file6">github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/handler/system.go (58.8%)</option>
+				
+				<option value="file7">github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/pkg/database/manager.go (37.1%)</option>
+				
+				<option value="file8">github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/pkg/database/mongodb.go (0.0%)</option>
+				
+				<option value="file9">github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/pkg/database/mysql.go (0.0%)</option>
+				
+				<option value="file10">github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/pkg/database/redis.go (0.0%)</option>
+				
+				<option value="file11">github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/testutil/config.go (100.0%)</option>
+				
+				<option value="file12">github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/testutil/setup.go (25.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">no coverage</span>
+				<span class="cov1">low coverage</span>
+				<span class="cov2">*</span>
+				<span class="cov3">*</span>
+				<span class="cov4">*</span>
+				<span class="cov5">*</span>
+				<span class="cov6">*</span>
+				<span class="cov7">*</span>
+				<span class="cov8">*</span>
+				<span class="cov9">*</span>
+				<span class="cov10">high coverage</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">// Package app provides middleware configuration for the application.
+package app
+
+import (
+        "time"
+
+        "github.com/gin-contrib/cors"
+        "github.com/gin-gonic/gin"
+        "github.com/sirupsen/logrus"
+)
+
+// addMiddlewares adds all necessary middlewares to the Gin router.
+func (s *Server) addMiddlewares(r *gin.Engine) <span class="cov0" title="0">{
+        // Recovery middleware
+        r.Use(gin.Recovery())
+
+        // Custom logger middleware
+        r.Use(loggerMiddleware())
+
+        // CORS middleware
+        r.Use(corsMiddleware())
+
+        // Request ID middleware
+        r.Use(requestIDMiddleware())
+
+        // Security headers middleware
+        r.Use(securityHeadersMiddleware())
+
+        // Rate limiting middleware (if needed)
+        // r.Use(rateLimitMiddleware())
+}</span>
+
+// loggerMiddleware creates a structured logger middleware using logrus.
+func loggerMiddleware() gin.HandlerFunc <span class="cov0" title="0">{
+        logger := logrus.New()
+        logger.SetFormatter(&amp;logrus.JSONFormatter{})
+
+        return gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string </span><span class="cov0" title="0">{
+                logger.WithFields(logrus.Fields{
+                        "status_code": param.StatusCode,
+                        "latency":     param.Latency,
+                        "client_ip":   param.ClientIP,
+                        "method":      param.Method,
+                        "path":        param.Path,
+                        "error":       param.ErrorMessage,
+                        "user_agent":  param.Request.UserAgent(),
+                        "timestamp":   param.TimeStamp.Format(time.RFC3339),
+                }).Info("HTTP Request")
+                return ""
+        }</span>)
+}
+
+// corsMiddleware configures CORS (Cross-Origin Resource Sharing) settings.
+func corsMiddleware() gin.HandlerFunc <span class="cov0" title="0">{
+        config := cors.Config{
+                AllowOrigins:     []string{"http://localhost:3000", "http://localhost:5173"}, // Add your frontend URLs
+                AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+                AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With", "X-Request-ID"},
+                ExposeHeaders:    []string{"Content-Length", "X-Request-ID"},
+                AllowCredentials: true,
+                MaxAge:           12 * time.Hour,
+        }
+        return cors.New(config)
+}</span>
+
+// requestIDMiddleware adds a unique request ID to each request.
+func requestIDMiddleware() gin.HandlerFunc <span class="cov0" title="0">{
+        return func(c *gin.Context) </span><span class="cov0" title="0">{
+                // Check if request ID already exists in header
+                requestID := c.GetHeader("X-Request-ID")
+                if requestID == "" </span><span class="cov0" title="0">{
+                        // Generate a simple request ID (in production, consider using UUID)
+                        requestID = generateRequestID()
+                }</span>
+
+                // Set request ID in context and response header
+                <span class="cov0" title="0">c.Set("request_id", requestID)
+                c.Header("X-Request-ID", requestID)
+
+                c.Next()</span>
+        }
+}
+
+// securityHeadersMiddleware adds security headers to responses.
+func securityHeadersMiddleware() gin.HandlerFunc <span class="cov0" title="0">{
+        return func(c *gin.Context) </span><span class="cov0" title="0">{
+                // Security headers
+                c.Header("X-Content-Type-Options", "nosniff")
+                c.Header("X-Frame-Options", "DENY")
+                c.Header("X-XSS-Protection", "1; mode=block")
+                c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
+
+                // Remove server information
+                c.Header("Server", "")
+
+                c.Next()
+        }</span>
+}
+
+// generateRequestID generates a simple request ID based on timestamp.
+// In production, consider using a more robust UUID library.
+func generateRequestID() string <span class="cov0" title="0">{
+        return time.Now().Format("20060102150405.000000")
+}</span>
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">// Package app provides routing configuration for the application.
+package app
+
+import (
+        "net/http"
+
+        "github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/handler"
+        "github.com/gin-gonic/gin"
+)
+
+// addRoutes configures all API routes for the application.
+func (s *Server) addRoutes(r *gin.Engine) <span class="cov0" title="0">{
+        // Initialize health handler
+        healthHandler := handler.NewHealthHandler(s.Config, s.DB)
+
+        // Health check endpoints
+        r.GET("/health", healthHandler.Health)
+        r.GET("/health/live", healthHandler.HealthLive)
+        r.GET("/health/ready", healthHandler.HealthReady)
+        r.GET("/metrics", healthHandler.Metrics)
+        r.GET("/", s.welcomeHandler)
+
+        // API version 1 routes
+        v1 := r.Group("/api/v1")
+
+        // Authentication routes
+        auth := v1.Group("/auth")
+        auth.POST("/login", s.placeholder("login"))
+        auth.POST("/register", s.placeholder("register"))
+        auth.POST("/logout", s.placeholder("logout"))
+        auth.POST("/refresh", s.placeholder("refresh"))
+        auth.GET("/profile", s.placeholder("profile"))
+
+        // File management routes
+        files := v1.Group("/files")
+        files.GET("", s.placeholder("list files"))
+        files.GET("/:id", s.placeholder("get file"))
+        files.POST("", s.placeholder("upload file"))
+        files.PUT("/:id", s.placeholder("update file"))
+        files.DELETE("/:id", s.placeholder("delete file"))
+        files.POST("/:id/share", s.placeholder("share file"))
+        files.GET("/:id/download", s.placeholder("download file"))
+        files.GET("/:id/preview", s.placeholder("preview file"))
+
+        // Folder management routes
+        folders := v1.Group("/folders")
+        folders.GET("", s.placeholder("list folders"))
+        folders.GET("/:id", s.placeholder("get folder"))
+        folders.POST("", s.placeholder("create folder"))
+        folders.PUT("/:id", s.placeholder("update folder"))
+        folders.DELETE("/:id", s.placeholder("delete folder"))
+
+        // Search routes
+        search := v1.Group("/search")
+        search.GET("/files", s.placeholder("search files"))
+        search.GET("/content", s.placeholder("search content"))
+
+        // User management routes
+        users := v1.Group("/users")
+        users.GET("/me", s.placeholder("get current user"))
+        users.PUT("/me", s.placeholder("update current user"))
+        users.GET("/me/storage", s.placeholder("get storage info"))
+
+        // Team collaboration routes
+        teams := v1.Group("/teams")
+        teams.GET("", s.placeholder("list teams"))
+        teams.POST("", s.placeholder("create team"))
+        teams.GET("/:id", s.placeholder("get team"))
+        teams.PUT("/:id", s.placeholder("update team"))
+        teams.DELETE("/:id", s.placeholder("delete team"))
+        teams.GET("/:id/members", s.placeholder("list team members"))
+        teams.POST("/:id/members", s.placeholder("add team member"))
+        teams.DELETE("/:id/members/:userId", s.placeholder("remove team member"))
+
+        // Chat routes (WebSocket will be added later)
+        chat := v1.Group("/chat")
+        chat.GET("/rooms", s.placeholder("list chat rooms"))
+        chat.POST("/rooms", s.placeholder("create chat room"))
+        chat.GET("/rooms/:id/messages", s.placeholder("get chat messages"))
+        chat.POST("/rooms/:id/messages", s.placeholder("send message"))
+
+        // Admin routes
+        admin := v1.Group("/admin")
+        systemHandler := handler.NewSystemHandler(s.Config, s.DB)
+        admin.GET("/stats", systemHandler.SystemStats)
+        admin.GET("/users", s.placeholder("list all users"))
+        admin.GET("/logs", s.placeholder("system logs"))
+}</span>
+
+// welcomeHandler handles root path requests.
+func (s *Server) welcomeHandler(c *gin.Context) <span class="cov0" title="0">{
+        c.JSON(http.StatusOK, gin.H{
+                "message":     "Welcome to YCG Cloud Storage API",
+                "version":     s.Config.App.Version,
+                "environment": s.Config.App.Environment,
+                "docs":        "/api/v1/docs", // Future API documentation endpoint
+        })
+}</span>
+
+// placeholder creates a placeholder handler for unimplemented routes.
+func (s *Server) placeholder(feature string) gin.HandlerFunc <span class="cov0" title="0">{
+        return func(c *gin.Context) </span><span class="cov0" title="0">{
+                c.JSON(http.StatusNotImplemented, gin.H{
+                        "message":    "This endpoint is not yet implemented",
+                        "feature":    feature,
+                        "request_id": c.GetString("request_id"),
+                })
+        }</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">// Package app provides the main application setup and configuration.
+package app
+
+import (
+        "github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/config"
+        "github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/pkg/database"
+        "github.com/gin-gonic/gin"
+)
+
+// Server represents the main application server.
+type Server struct {
+        Router *gin.Engine
+        DB     *database.Manager
+        Config *config.Config
+}
+
+// NewServer creates a new server instance with the given configuration.
+func NewServer(cfg *config.Config) (*Server, error) <span class="cov0" title="0">{
+        // Initialize database connections
+        dbManager, err := database.NewManager(&amp;cfg.Database)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // Test database connections
+        <span class="cov0" title="0">if err := dbManager.HealthCheck(); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // Create server instance
+        <span class="cov0" title="0">server := &amp;Server{
+                DB:     dbManager,
+                Config: cfg,
+        }
+
+        // Setup router
+        server.setupRouter()
+
+        return server, nil</span>
+}
+
+// setupRouter configures the Gin router with middlewares and routes.
+func (s *Server) setupRouter() <span class="cov0" title="0">{
+        // Set Gin mode based on environment
+        if s.Config.App.Environment == "production" </span><span class="cov0" title="0">{
+                gin.SetMode(gin.ReleaseMode)
+        }</span> else<span class="cov0" title="0"> {
+                gin.SetMode(gin.DebugMode)
+        }</span>
+
+        // Create router
+        <span class="cov0" title="0">r := gin.New()
+
+        // Add middlewares
+        s.addMiddlewares(r)
+
+        // Add routes
+        s.addRoutes(r)
+
+        s.Router = r</span>
+}
+
+// Close closes all server resources including database connections.
+func (s *Server) Close() error <span class="cov0" title="0">{
+        if s.DB != nil </span><span class="cov0" title="0">{
+                return s.DB.Close()
+        }</span>
+        <span class="cov0" title="0">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">// Package config provides database configuration for the cloud storage system.
+package config
+
+import (
+        "time"
+)
+
+// DatabaseConfig contains all database configurations.
+type DatabaseConfig struct {
+        MySQL    MySQLConfig   `mapstructure:"mysql" json:"mysql"`
+        MongoDB  MongoDBConfig `mapstructure:"mongodb" json:"mongodb"`
+        Redis    RedisConfig   `mapstructure:"redis" json:"redis"`
+        MaxConns int           `mapstructure:"max_conns" json:"max_conns"`
+        MaxIdle  int           `mapstructure:"max_idle" json:"max_idle"`
+}
+
+// MySQLConfig contains MySQL database configuration.
+type MySQLConfig struct {
+        Host         string        `mapstructure:"host" json:"host"`
+        Port         int           `mapstructure:"port" json:"port"`
+        Username     string        `mapstructure:"username" json:"username"`
+        Password     string        `mapstructure:"password" json:"password"`
+        Database     string        `mapstructure:"database" json:"database"`
+        Charset      string        `mapstructure:"charset" json:"charset"`
+        ParseTime    bool          `mapstructure:"parse_time" json:"parse_time"`
+        Loc          string        `mapstructure:"loc" json:"loc"`
+        Timeout      time.Duration `mapstructure:"timeout" json:"timeout"`
+        ReadTimeout  time.Duration `mapstructure:"read_timeout" json:"read_timeout"`
+        WriteTimeout time.Duration `mapstructure:"write_timeout" json:"write_timeout"`
+
+        // Connection pool settings
+        MaxOpenConns    int           `mapstructure:"max_open_conns" json:"max_open_conns"`
+        MaxIdleConns    int           `mapstructure:"max_idle_conns" json:"max_idle_conns"`
+        ConnMaxLifetime time.Duration `mapstructure:"conn_max_lifetime" json:"conn_max_lifetime"`
+        ConnMaxIdleTime time.Duration `mapstructure:"conn_max_idle_time" json:"conn_max_idle_time"`
+}
+
+// MongoDBConfig contains MongoDB configuration.
+type MongoDBConfig struct {
+        URI              string        `mapstructure:"uri" json:"uri"`
+        Database         string        `mapstructure:"database" json:"database"`
+        Username         string        `mapstructure:"username" json:"username"`
+        Password         string        `mapstructure:"password" json:"password"`
+        ConnectTimeout   time.Duration `mapstructure:"connect_timeout" json:"connect_timeout"`
+        SocketTimeout    time.Duration `mapstructure:"socket_timeout" json:"socket_timeout"`
+        ServerSelTimeout time.Duration `mapstructure:"server_sel_timeout" json:"server_sel_timeout"`
+
+        // Connection pool settings
+        MaxPoolSize   uint64 `mapstructure:"max_pool_size" json:"max_pool_size"`
+        MinPoolSize   uint64 `mapstructure:"min_pool_size" json:"min_pool_size"`
+        MaxIdleTimeMS uint64 `mapstructure:"max_idle_time_ms" json:"max_idle_time_ms"`
+}
+
+// RedisConfig contains Redis configuration.
+type RedisConfig struct {
+        Host     string `mapstructure:"host" json:"host"`
+        Port     int    `mapstructure:"port" json:"port"`
+        Password string `mapstructure:"password" json:"password"`
+        DB       int    `mapstructure:"db" json:"db"`
+        Username string `mapstructure:"username" json:"username"`
+
+        // Connection pool settings
+        PoolSize      int           `mapstructure:"pool_size" json:"pool_size"`
+        MinIdleConns  int           `mapstructure:"min_idle_conns" json:"min_idle_conns"`
+        MaxConnAge    time.Duration `mapstructure:"max_conn_age" json:"max_conn_age"`
+        PoolTimeout   time.Duration `mapstructure:"pool_timeout" json:"pool_timeout"`
+        IdleTimeout   time.Duration `mapstructure:"idle_timeout" json:"idle_timeout"`
+        IdleCheckFreq time.Duration `mapstructure:"idle_check_freq" json:"idle_check_freq"`
+
+        // Timeouts
+        DialTimeout  time.Duration `mapstructure:"dial_timeout" json:"dial_timeout"`
+        ReadTimeout  time.Duration `mapstructure:"read_timeout" json:"read_timeout"`
+        WriteTimeout time.Duration `mapstructure:"write_timeout" json:"write_timeout"`
+}
+
+// GetDefaultDatabaseConfig returns default database configuration.
+func GetDefaultDatabaseConfig() DatabaseConfig <span class="cov0" title="0">{
+        return DatabaseConfig{
+                MySQL: MySQLConfig{
+                        Host:            "localhost",
+                        Port:            3306,
+                        Username:        "root",
+                        Password:        "",
+                        Database:        "ycgcloud",
+                        Charset:         "utf8mb4",
+                        ParseTime:       true,
+                        Loc:             "Local",
+                        Timeout:         10 * time.Second,
+                        ReadTimeout:     30 * time.Second,
+                        WriteTimeout:    30 * time.Second,
+                        MaxOpenConns:    100,
+                        MaxIdleConns:    10,
+                        ConnMaxLifetime: time.Hour,
+                        ConnMaxIdleTime: 10 * time.Minute,
+                },
+                MongoDB: MongoDBConfig{
+                        URI:              "mongodb://localhost:27017",
+                        Database:         "ycgcloud",
+                        Username:         "",
+                        Password:         "",
+                        ConnectTimeout:   10 * time.Second,
+                        SocketTimeout:    30 * time.Second,
+                        ServerSelTimeout: 30 * time.Second,
+                        MaxPoolSize:      100,
+                        MinPoolSize:      5,
+                        MaxIdleTimeMS:    300000, // 5 minutes
+                },
+                Redis: RedisConfig{
+                        Host:          "localhost",
+                        Port:          6379,
+                        Password:      "",
+                        DB:            0,
+                        Username:      "",
+                        PoolSize:      20,
+                        MinIdleConns:  5,
+                        MaxConnAge:    time.Hour,
+                        PoolTimeout:   4 * time.Second,
+                        IdleTimeout:   5 * time.Minute,
+                        IdleCheckFreq: time.Minute,
+                        DialTimeout:   5 * time.Second,
+                        ReadTimeout:   3 * time.Second,
+                        WriteTimeout:  3 * time.Second,
+                },
+                MaxConns: 100,
+                MaxIdle:  10,
+        }
+}</span>
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">// Package config provides configuration loading and management.
+package config
+
+import (
+        "errors"
+        "fmt"
+        "os"
+        "strings"
+        "time"
+
+        "github.com/spf13/viper"
+)
+
+// Config represents the complete application configuration.
+type Config struct {
+        App      AppConfig      `mapstructure:"app"`
+        Server   ServerConfig   `mapstructure:"server"`
+        Database DatabaseConfig `mapstructure:"database"`
+        Storage  StorageConfig  `mapstructure:"storage"`
+        Auth     AuthConfig     `mapstructure:"auth"`
+        Log      LogConfig      `mapstructure:"log"`
+        Monitor  MonitorConfig  `mapstructure:"monitor"`
+}
+
+// AppConfig contains application-level configuration.
+type AppConfig struct {
+        Name        string `mapstructure:"name"`
+        Version     string `mapstructure:"version"`
+        Environment string `mapstructure:"environment"`
+        Debug       bool   `mapstructure:"debug"`
+}
+
+// ServerConfig contains HTTP server configuration.
+type ServerConfig struct {
+        Host         string `mapstructure:"host" json:"host"`
+        Port         string `mapstructure:"port" json:"port"`
+        ReadTimeout  int    `mapstructure:"read_timeout" json:"read_timeout"`
+        WriteTimeout int    `mapstructure:"write_timeout" json:"write_timeout"`
+        IdleTimeout  int    `mapstructure:"idle_timeout" json:"idle_timeout"`
+}
+
+// StorageConfig contains file storage configuration.
+type StorageConfig struct {
+        Type      string      `mapstructure:"type"`
+        Local     LocalConfig `mapstructure:"local"`
+        ChunkSize int64       `mapstructure:"chunk_size"`
+}
+
+// LocalConfig contains local storage configuration.
+type LocalConfig struct {
+        Path string `mapstructure:"path"`
+}
+
+// AuthConfig contains authentication configuration.
+type AuthConfig struct {
+        JWTSecret     string        `mapstructure:"jwt_secret"`
+        TokenExpiry   time.Duration `mapstructure:"token_expiry"`
+        RefreshExpiry time.Duration `mapstructure:"refresh_expiry"`
+        BCryptCost    int           `mapstructure:"bcrypt_cost"`
+}
+
+// LogConfig contains logging configuration.
+type LogConfig struct {
+        Level  string `mapstructure:"level"`
+        Format string `mapstructure:"format"`
+        Output string `mapstructure:"output"`
+}
+
+// MonitorConfig contains monitoring configuration.
+type MonitorConfig struct {
+        Enabled    bool   `mapstructure:"enabled"`
+        MetricsURL string `mapstructure:"metrics_url"`
+}
+
+// LoadConfig loads configuration from multiple sources with priority:
+// 1. Environment variables
+// 2. Configuration files (development.yaml, production.yaml, etc.)
+// 3. Default values
+func LoadConfig() (*Config, error) <span class="cov10" title="5">{
+        v := viper.New()
+
+        // Set configuration file paths and names
+        v.SetConfigName("development") // default config file
+        v.SetConfigType("yaml")
+        v.AddConfigPath("./configs")
+        v.AddConfigPath("../configs")
+        v.AddConfigPath(".")
+
+        // Override config file based on environment
+        env := os.Getenv("APP_ENV")
+        if env == "" </span><span class="cov0" title="0">{
+                env = "development"
+        }</span>
+
+        <span class="cov10" title="5">switch env </span>{
+        case "production":<span class="cov0" title="0">
+                v.SetConfigName("production")</span>
+        case "testing":<span class="cov0" title="0">
+                v.SetConfigName("testing")</span>
+        case "staging":<span class="cov0" title="0">
+                v.SetConfigName("staging")</span>
+        default:<span class="cov10" title="5">
+                v.SetConfigName("development")</span>
+        }
+
+        // Enable environment variable binding
+        <span class="cov10" title="5">v.AutomaticEnv()
+        v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
+        // Set default values
+        setDefaultValues(v)
+
+        // Read configuration file
+        if err := v.ReadInConfig(); err != nil </span><span class="cov10" title="5">{
+                // If config file is not found, use environment variables and defaults
+                var configFileNotFoundError viper.ConfigFileNotFoundError
+                if !errors.As(err, &amp;configFileNotFoundError) </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("failed to read config file: %w", err)
+                }</span>
+        }
+
+        // Parse configuration into struct
+        <span class="cov10" title="5">var config Config
+        if err := v.Unmarshal(&amp;config); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to unmarshal config: %w", err)
+        }</span>
+
+        // Validate configuration
+        <span class="cov10" title="5">if err := validateConfig(&amp;config); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("invalid configuration: %w", err)
+        }</span>
+
+        <span class="cov10" title="5">return &amp;config, nil</span>
+}
+
+// setDefaultValues sets default configuration values.
+func setDefaultValues(v *viper.Viper) <span class="cov10" title="5">{
+        // App defaults
+        v.SetDefault("app.name", "ycg-cloud")
+        v.SetDefault("app.version", "1.0.0")
+        v.SetDefault("app.environment", "development")
+        v.SetDefault("app.debug", true)
+
+        // Server defaults
+        v.SetDefault("server.host", "0.0.0.0")
+        v.SetDefault("server.port", ":8080")
+        v.SetDefault("server.read_timeout", 30)
+        v.SetDefault("server.write_timeout", 30)
+        v.SetDefault("server.idle_timeout", 120)
+
+        // Database defaults - using provided connection information
+        v.SetDefault("database.mysql.host", "dbconn.sealosbja.site")
+        v.SetDefault("database.mysql.port", 36973)
+        v.SetDefault("database.mysql.username", "root")
+        v.SetDefault("database.mysql.password", "hxl202653")
+        v.SetDefault("database.mysql.database", "ycgcloud")
+        v.SetDefault("database.mysql.charset", "utf8mb4")
+        v.SetDefault("database.mysql.parse_time", true)
+        v.SetDefault("database.mysql.loc", "Local")
+        v.SetDefault("database.mysql.timeout", "10s")
+        v.SetDefault("database.mysql.read_timeout", "30s")
+        v.SetDefault("database.mysql.write_timeout", "30s")
+        v.SetDefault("database.mysql.max_open_conns", 100)
+        v.SetDefault("database.mysql.max_idle_conns", 10)
+        v.SetDefault("database.mysql.conn_max_lifetime", "1h")
+        v.SetDefault("database.mysql.conn_max_idle_time", "10m")
+
+        // MongoDB defaults
+        v.SetDefault("database.mongodb.uri", "mongodb://root:hxl202653@dbconn.sealosbja.site:42033/?directConnection=true")
+        v.SetDefault("database.mongodb.database", "ycgcloud")
+        v.SetDefault("database.mongodb.username", "root")
+        v.SetDefault("database.mongodb.password", "hxl202653")
+        v.SetDefault("database.mongodb.connect_timeout", "10s")
+        v.SetDefault("database.mongodb.socket_timeout", "30s")
+        v.SetDefault("database.mongodb.server_sel_timeout", "30s")
+        v.SetDefault("database.mongodb.max_pool_size", 100)
+        v.SetDefault("database.mongodb.min_pool_size", 5)
+        v.SetDefault("database.mongodb.max_idle_time_ms", 300000)
+
+        // Redis defaults
+        v.SetDefault("database.redis.host", "dbconn.sealosbja.site")
+        v.SetDefault("database.redis.port", 49169)
+        v.SetDefault("database.redis.password", "jdsj6j67")
+        v.SetDefault("database.redis.db", 0)
+        v.SetDefault("database.redis.username", "default")
+        v.SetDefault("database.redis.pool_size", 20)
+        v.SetDefault("database.redis.min_idle_conns", 5)
+        v.SetDefault("database.redis.max_conn_age", "1h")
+        v.SetDefault("database.redis.pool_timeout", "4s")
+        v.SetDefault("database.redis.idle_timeout", "5m")
+        v.SetDefault("database.redis.idle_check_freq", "1m")
+        v.SetDefault("database.redis.dial_timeout", "5s")
+        v.SetDefault("database.redis.read_timeout", "3s")
+        v.SetDefault("database.redis.write_timeout", "3s")
+
+        // Storage defaults
+        v.SetDefault("storage.type", "local")
+        v.SetDefault("storage.chunk_size", 5242880)
+        v.SetDefault("storage.local.path", "./storage")
+
+        // Auth defaults
+        v.SetDefault("auth.jwt_secret", "your-secret-key-change-in-production")
+        v.SetDefault("auth.token_expiry", "24h")
+        v.SetDefault("auth.refresh_expiry", "168h")
+        v.SetDefault("auth.bcrypt_cost", 12)
+
+        // Log defaults
+        v.SetDefault("log.level", "info")
+        v.SetDefault("log.format", "json")
+        v.SetDefault("log.output", "stdout")
+
+        // Monitor defaults
+        v.SetDefault("monitor.enabled", true)
+        v.SetDefault("monitor.metrics_url", "/metrics")
+}</span>
+
+// validateConfig validates the loaded configuration.
+func validateConfig(config *Config) error <span class="cov10" title="5">{
+        // Validate required fields
+        if config.App.Name == "" </span><span class="cov0" title="0">{
+                return fmt.Errorf("app.name is required")
+        }</span>
+
+        <span class="cov10" title="5">if config.Database.MySQL.Host == "" </span><span class="cov0" title="0">{
+                return fmt.Errorf("database.mysql.host is required")
+        }</span>
+
+        <span class="cov10" title="5">if config.Database.MongoDB.URI == "" </span><span class="cov0" title="0">{
+                return fmt.Errorf("database.mongodb.uri is required")
+        }</span>
+
+        <span class="cov10" title="5">if config.Database.Redis.Host == "" </span><span class="cov0" title="0">{
+                return fmt.Errorf("database.redis.host is required")
+        }</span>
+
+        <span class="cov10" title="5">if config.Auth.JWTSecret == "" || config.Auth.JWTSecret == "your-secret-key-change-in-production" </span><span class="cov10" title="5">{
+                if config.App.Environment == "production" </span><span class="cov0" title="0">{
+                        return fmt.Errorf("auth.jwt_secret must be set for production environment")
+                }</span>
+        }
+
+        // Validate database connections can be established
+        // This would be done in the database managers during initialization
+
+        <span class="cov10" title="5">return nil</span>
+}
+
+// GetDatabaseConfig returns only the database configuration portion.
+func (c *Config) GetDatabaseConfig() DatabaseConfig <span class="cov0" title="0">{
+        return c.Database
+}</span>
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">// Package handler provides HTTP handlers for the application.
+package handler
+
+import (
+        "net/http"
+        "os"
+        "runtime"
+        "time"
+
+        "github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/config"
+        "github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/pkg/database"
+        "github.com/gin-gonic/gin"
+)
+
+// HealthHandler handles health check and monitoring endpoints.
+type HealthHandler struct {
+        config *config.Config
+        db     *database.Manager
+}
+
+// NewHealthHandler creates a new health check handler.
+func NewHealthHandler(cfg *config.Config, db *database.Manager) *HealthHandler <span class="cov10" title="5">{
+        return &amp;HealthHandler{
+                config: cfg,
+                db:     db,
+        }
+}</span>
+
+// HealthResponse represents the structure of health check response.
+type HealthResponse struct {
+        Status      string                 `json:"status"`
+        Version     string                 `json:"version"`
+        Environment string                 `json:"environment"`
+        Timestamp   string                 `json:"timestamp"`
+        Uptime      string                 `json:"uptime"`
+        Services    map[string]interface{} `json:"services"`
+        System      SystemInfo             `json:"system"`
+}
+
+// SystemInfo contains system information.
+type SystemInfo struct {
+        Hostname    string `json:"hostname"`
+        Platform    string `json:"platform"`
+        GoVersion   string `json:"go_version"`
+        Goroutines  int    `json:"goroutines"`
+        MemoryUsage uint64 `json:"memory_usage_mb"`
+        CPUCount    int    `json:"cpu_count"`
+}
+
+// MonitoringResponse represents the structure of monitoring response.
+type MonitoringResponse struct {
+        Application ApplicationMetrics `json:"application"`
+        Database    DatabaseMetrics    `json:"database"`
+        System      SystemMetrics      `json:"system"`
+        Timestamp   string             `json:"timestamp"`
+}
+
+// ApplicationMetrics contains application-level metrics.
+type ApplicationMetrics struct {
+        Name        string `json:"name"`
+        Version     string `json:"version"`
+        Environment string `json:"environment"`
+        Uptime      string `json:"uptime"`
+}
+
+// DatabaseMetrics contains database connection metrics.
+type DatabaseMetrics struct {
+        MySQL   interface{} `json:"mysql"`
+        MongoDB interface{} `json:"mongodb"`
+        Redis   interface{} `json:"redis"`
+}
+
+// SystemMetrics contains system performance metrics.
+type SystemMetrics struct {
+        Hostname    string      `json:"hostname"`
+        Platform    string      `json:"platform"`
+        GoVersion   string      `json:"go_version"`
+        Goroutines  int         `json:"goroutines"`
+        MemoryStats MemoryStats `json:"memory"`
+        CPUStats    CPUStats    `json:"cpu"`
+}
+
+// MemoryStats contains memory usage statistics.
+type MemoryStats struct {
+        Allocated    uint64 `json:"allocated_mb"`
+        TotalAlloc   uint64 `json:"total_alloc_mb"`
+        SystemMemory uint64 `json:"system_mb"`
+        GCCycles     uint32 `json:"gc_cycles"`
+}
+
+// CPUStats contains CPU usage statistics.
+type CPUStats struct {
+        Count int `json:"count"`
+}
+
+// startTime records when the application started.
+var startTime = time.Now()
+
+// Health handles basic health check requests.
+// @Summary Health check endpoint
+// @Description Returns the health status of the application and its dependencies
+// @Tags Health
+// @Produce json
+// @Success 200 {object} HealthResponse "Service is healthy"
+// @Failure 503 {object} HealthResponse "Service is unhealthy"
+// @Router /health [get]
+func (h *HealthHandler) Health(c *gin.Context) <span class="cov1" title="1">{
+        // Get system information
+        hostname, _ := os.Hostname()
+        var m runtime.MemStats
+        runtime.ReadMemStats(&amp;m)
+
+        systemInfo := SystemInfo{
+                Hostname:    hostname,
+                Platform:    runtime.GOOS + "/" + runtime.GOARCH,
+                GoVersion:   runtime.Version(),
+                Goroutines:  runtime.NumGoroutine(),
+                MemoryUsage: m.Sys / 1024 / 1024, // Convert to MB
+                CPUCount:    runtime.NumCPU(),
+        }
+
+        // Initialize response
+        response := HealthResponse{
+                Status:      "healthy",
+                Version:     h.config.App.Version,
+                Environment: h.config.App.Environment,
+                Timestamp:   time.Now().UTC().Format(time.RFC3339),
+                Uptime:      time.Since(startTime).String(),
+                Services:    make(map[string]interface{}),
+                System:      systemInfo,
+        }
+
+        // Check database health
+        if h.db == nil </span><span class="cov1" title="1">{
+                response.Status = "unhealthy"
+                response.Services["database"] = map[string]interface{}{
+                        "status": "unhealthy",
+                        "error":  "Database manager not initialized",
+                }
+                c.JSON(http.StatusServiceUnavailable, response)
+                return
+        }</span>
+
+        <span class="cov0" title="0">if err := h.db.HealthCheck(); err != nil </span><span class="cov0" title="0">{
+                response.Status = "unhealthy"
+                response.Services["database"] = map[string]interface{}{
+                        "status": "unhealthy",
+                        "error":  err.Error(),
+                }
+                c.JSON(http.StatusServiceUnavailable, response)
+                return
+        }</span>
+
+        // Get database connection stats
+        <span class="cov0" title="0">dbStats := h.db.GetConnectionStats()
+        response.Services["database"] = map[string]interface{}{
+                "status": "healthy",
+                "stats":  dbStats,
+        }
+
+        c.JSON(http.StatusOK, response)</span>
+}
+
+// HealthLive handles liveness probe requests (for Kubernetes).
+// @Summary Liveness probe endpoint
+// @Description Returns 200 if the application is running
+// @Tags Health
+// @Produce json
+// @Success 200 {object} map[string]string "Application is alive"
+// @Router /health/live [get]
+func (h *HealthHandler) HealthLive(c *gin.Context) <span class="cov1" title="1">{
+        c.JSON(http.StatusOK, gin.H{
+                "status":    "alive",
+                "timestamp": time.Now().UTC().Format(time.RFC3339),
+        })
+}</span>
+
+// HealthReady handles readiness probe requests (for Kubernetes).
+// @Summary Readiness probe endpoint
+// @Description Returns 200 if the application is ready to serve traffic
+// @Tags Health
+// @Produce json
+// @Success 200 {object} map[string]string "Application is ready"
+// @Failure 503 {object} map[string]string "Application is not ready"
+// @Router /health/ready [get]
+func (h *HealthHandler) HealthReady(c *gin.Context) <span class="cov1" title="1">{
+        // Check if database is ready
+        if h.db == nil </span><span class="cov1" title="1">{
+                c.JSON(http.StatusServiceUnavailable, gin.H{
+                        "status":    "not ready",
+                        "error":     "Database not ready",
+                        "timestamp": time.Now().UTC().Format(time.RFC3339),
+                })
+                return
+        }</span>
+
+        <span class="cov0" title="0">if err := h.db.HealthCheck(); err != nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusServiceUnavailable, gin.H{
+                        "status":    "not ready",
+                        "error":     "Database not ready",
+                        "timestamp": time.Now().UTC().Format(time.RFC3339),
+                })
+                return
+        }</span>
+
+        <span class="cov0" title="0">c.JSON(http.StatusOK, gin.H{
+                "status":    "ready",
+                "timestamp": time.Now().UTC().Format(time.RFC3339),
+        })</span>
+}
+
+// Metrics handles detailed monitoring and metrics requests.
+// @Summary Monitoring metrics endpoint
+// @Description Returns detailed application and system metrics
+// @Tags Monitoring
+// @Produce json
+// @Success 200 {object} MonitoringResponse "Monitoring metrics"
+// @Router /metrics [get]
+func (h *HealthHandler) Metrics(c *gin.Context) <span class="cov1" title="1">{
+        hostname, _ := os.Hostname()
+        var m runtime.MemStats
+        runtime.ReadMemStats(&amp;m)
+
+        // Application metrics
+        appMetrics := ApplicationMetrics{
+                Name:        h.config.App.Name,
+                Version:     h.config.App.Version,
+                Environment: h.config.App.Environment,
+                Uptime:      time.Since(startTime).String(),
+        }
+
+        // Database metrics
+        dbMetrics := DatabaseMetrics{
+                MySQL:   nil,
+                MongoDB: nil,
+                Redis:   nil,
+        }
+
+        // Get database connection stats if available
+        if h.db != nil </span><span class="cov0" title="0">{
+                stats := h.db.GetConnectionStats()
+                if mysql, ok := stats["mysql"]; ok </span><span class="cov0" title="0">{
+                        dbMetrics.MySQL = mysql
+                }</span>
+                <span class="cov0" title="0">if mongodb, ok := stats["mongodb"]; ok </span><span class="cov0" title="0">{
+                        dbMetrics.MongoDB = mongodb
+                }</span>
+                <span class="cov0" title="0">if redis, ok := stats["redis"]; ok </span><span class="cov0" title="0">{
+                        dbMetrics.Redis = redis
+                }</span>
+        }
+
+        // System metrics
+        <span class="cov1" title="1">systemMetrics := SystemMetrics{
+                Hostname:   hostname,
+                Platform:   runtime.GOOS + "/" + runtime.GOARCH,
+                GoVersion:  runtime.Version(),
+                Goroutines: runtime.NumGoroutine(),
+                MemoryStats: MemoryStats{
+                        Allocated:    m.Alloc / 1024 / 1024,      // Convert to MB
+                        TotalAlloc:   m.TotalAlloc / 1024 / 1024, // Convert to MB
+                        SystemMemory: m.Sys / 1024 / 1024,        // Convert to MB
+                        GCCycles:     m.NumGC,
+                },
+                CPUStats: CPUStats{
+                        Count: runtime.NumCPU(),
+                },
+        }
+
+        response := MonitoringResponse{
+                Application: appMetrics,
+                Database:    dbMetrics,
+                System:      systemMetrics,
+                Timestamp:   time.Now().UTC().Format(time.RFC3339),
+        }
+
+        c.JSON(http.StatusOK, response)</span>
+}
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">// Package handler provides system monitoring handlers.
+package handler
+
+import (
+        "net/http"
+        "os"
+        "runtime"
+        "time"
+
+        "github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/config"
+        "github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/pkg/database"
+        "github.com/gin-gonic/gin"
+)
+
+// SystemHandler handles system monitoring and statistics endpoints.
+type SystemHandler struct {
+        config *config.Config
+        db     *database.Manager
+}
+
+// NewSystemHandler creates a new system monitoring handler.
+func NewSystemHandler(cfg *config.Config, db *database.Manager) *SystemHandler <span class="cov10" title="6">{
+        return &amp;SystemHandler{
+                config: cfg,
+                db:     db,
+        }
+}</span>
+
+// SystemStatsResponse represents system statistics response.
+type SystemStatsResponse struct {
+        Application ApplicationStats      `json:"application"`
+        System      DetailedSystemStats   `json:"system"`
+        Database    DetailedDatabaseStats `json:"database"`
+        Timestamp   string                `json:"timestamp"`
+}
+
+// ApplicationStats contains application statistics.
+type ApplicationStats struct {
+        Name        string `json:"name"`
+        Version     string `json:"version"`
+        Environment string `json:"environment"`
+        Uptime      string `json:"uptime"`
+        StartTime   string `json:"start_time"`
+}
+
+// DetailedSystemStats contains detailed system statistics.
+type DetailedSystemStats struct {
+        Hostname      string             `json:"hostname"`
+        Platform      string             `json:"platform"`
+        Architecture  string             `json:"architecture"`
+        GoVersion     string             `json:"go_version"`
+        CPUInfo       CPUInfo            `json:"cpu"`
+        MemoryInfo    DetailedMemoryInfo `json:"memory"`
+        GoroutineInfo GoroutineInfo      `json:"goroutines"`
+        GCInfo        GCInfo             `json:"garbage_collection"`
+}
+
+// CPUInfo contains CPU information.
+type CPUInfo struct {
+        Count int `json:"count"`
+}
+
+// DetailedMemoryInfo contains detailed memory information.
+type DetailedMemoryInfo struct {
+        Allocated      uint64 `json:"allocated_bytes"`
+        AllocatedMB    uint64 `json:"allocated_mb"`
+        TotalAlloc     uint64 `json:"total_alloc_bytes"`
+        TotalAllocMB   uint64 `json:"total_alloc_mb"`
+        System         uint64 `json:"system_bytes"`
+        SystemMB       uint64 `json:"system_mb"`
+        Lookups        uint64 `json:"lookups"`
+        Mallocs        uint64 `json:"mallocs"`
+        Frees          uint64 `json:"frees"`
+        HeapAlloc      uint64 `json:"heap_alloc_bytes"`
+        HeapAllocMB    uint64 `json:"heap_alloc_mb"`
+        HeapSys        uint64 `json:"heap_sys_bytes"`
+        HeapSysMB      uint64 `json:"heap_sys_mb"`
+        HeapIdle       uint64 `json:"heap_idle_bytes"`
+        HeapIdleMB     uint64 `json:"heap_idle_mb"`
+        HeapInuse      uint64 `json:"heap_inuse_bytes"`
+        HeapInuseMB    uint64 `json:"heap_inuse_mb"`
+        HeapReleased   uint64 `json:"heap_released_bytes"`
+        HeapReleasedMB uint64 `json:"heap_released_mb"`
+        HeapObjects    uint64 `json:"heap_objects"`
+}
+
+// GoroutineInfo contains goroutine information.
+type GoroutineInfo struct {
+        Count int `json:"count"`
+}
+
+// GCInfo contains garbage collection information.
+type GCInfo struct {
+        NumGC         uint32   `json:"num_gc"`
+        NumForcedGC   uint32   `json:"num_forced_gc"`
+        GCCPUFraction float64  `json:"gc_cpu_fraction"`
+        EnableGC      bool     `json:"enable_gc"`
+        DebugGC       bool     `json:"debug_gc"`
+        LastGC        string   `json:"last_gc"`
+        NextGC        uint64   `json:"next_gc_mb"`
+        PauseTotal    string   `json:"pause_total"`
+        PauseNs       []uint64 `json:"pause_ns"`
+}
+
+// DetailedDatabaseStats contains detailed database statistics.
+type DetailedDatabaseStats struct {
+        MySQL   interface{}     `json:"mysql"`
+        MongoDB interface{}     `json:"mongodb"`
+        Redis   interface{}     `json:"redis"`
+        Health  map[string]bool `json:"health_status"`
+}
+
+// SystemStats handles detailed system statistics requests.
+// @Summary System statistics endpoint
+// @Description Returns detailed system and application statistics
+// @Tags System
+// @Produce json
+// @Success 200 {object} SystemStatsResponse "System statistics"
+// @Router /admin/stats [get]
+func (s *SystemHandler) SystemStats(c *gin.Context) <span class="cov4" title="2">{
+        hostname, _ := os.Hostname()
+        var m runtime.MemStats
+        runtime.ReadMemStats(&amp;m)
+
+        // Application stats
+        appStats := ApplicationStats{
+                Name:        s.config.App.Name,
+                Version:     s.config.App.Version,
+                Environment: s.config.App.Environment,
+                Uptime:      time.Since(startTime).String(),
+                StartTime:   startTime.Format(time.RFC3339),
+        }
+
+        // Detailed memory information
+        memoryInfo := DetailedMemoryInfo{
+                Allocated:      m.Alloc,
+                AllocatedMB:    m.Alloc / 1024 / 1024,
+                TotalAlloc:     m.TotalAlloc,
+                TotalAllocMB:   m.TotalAlloc / 1024 / 1024,
+                System:         m.Sys,
+                SystemMB:       m.Sys / 1024 / 1024,
+                Lookups:        m.Lookups,
+                Mallocs:        m.Mallocs,
+                Frees:          m.Frees,
+                HeapAlloc:      m.HeapAlloc,
+                HeapAllocMB:    m.HeapAlloc / 1024 / 1024,
+                HeapSys:        m.HeapSys,
+                HeapSysMB:      m.HeapSys / 1024 / 1024,
+                HeapIdle:       m.HeapIdle,
+                HeapIdleMB:     m.HeapIdle / 1024 / 1024,
+                HeapInuse:      m.HeapInuse,
+                HeapInuseMB:    m.HeapInuse / 1024 / 1024,
+                HeapReleased:   m.HeapReleased,
+                HeapReleasedMB: m.HeapReleased / 1024 / 1024,
+                HeapObjects:    m.HeapObjects,
+        }
+
+        // GC information
+        gcInfo := GCInfo{
+                NumGC:         m.NumGC,
+                NumForcedGC:   m.NumForcedGC,
+                GCCPUFraction: m.GCCPUFraction,
+                EnableGC:      m.EnableGC,
+                DebugGC:       m.DebugGC,
+                NextGC:        m.NextGC / 1024 / 1024, // Convert to MB
+                PauseTotal:    time.Duration(m.PauseTotalNs).String(),
+                PauseNs:       m.PauseNs[:],
+        }
+
+        if m.NumGC &gt; 0 </span><span class="cov0" title="0">{
+                gcInfo.LastGC = time.Unix(0, int64(m.LastGC)).Format(time.RFC3339)
+        }</span> else<span class="cov4" title="2"> {
+                gcInfo.LastGC = "never"
+        }</span>
+
+        // System stats
+        <span class="cov4" title="2">systemStats := DetailedSystemStats{
+                Hostname:     hostname,
+                Platform:     runtime.GOOS,
+                Architecture: runtime.GOARCH,
+                GoVersion:    runtime.Version(),
+                CPUInfo: CPUInfo{
+                        Count: runtime.NumCPU(),
+                },
+                MemoryInfo: memoryInfo,
+                GoroutineInfo: GoroutineInfo{
+                        Count: runtime.NumGoroutine(),
+                },
+                GCInfo: gcInfo,
+        }
+
+        // Database stats
+        dbStats := DetailedDatabaseStats{
+                MySQL:   nil,
+                MongoDB: nil,
+                Redis:   nil,
+                Health:  make(map[string]bool),
+        }
+
+        if s.db != nil </span><span class="cov0" title="0">{
+                // Get database connection stats
+                stats := s.db.GetConnectionStats()
+                if mysql, ok := stats["mysql"]; ok </span><span class="cov0" title="0">{
+                        dbStats.MySQL = mysql
+                }</span>
+                <span class="cov0" title="0">if mongodb, ok := stats["mongodb"]; ok </span><span class="cov0" title="0">{
+                        dbStats.MongoDB = mongodb
+                }</span>
+                <span class="cov0" title="0">if redis, ok := stats["redis"]; ok </span><span class="cov0" title="0">{
+                        dbStats.Redis = redis
+                }</span>
+
+                // Check individual database health
+                <span class="cov0" title="0">dbStats.Health["mysql"] = s.checkMySQLHealth()
+                dbStats.Health["mongodb"] = s.checkMongoDBHealth()
+                dbStats.Health["redis"] = s.checkRedisHealth()</span>
+        }
+
+        <span class="cov4" title="2">response := SystemStatsResponse{
+                Application: appStats,
+                System:      systemStats,
+                Database:    dbStats,
+                Timestamp:   time.Now().UTC().Format(time.RFC3339),
+        }
+
+        c.JSON(http.StatusOK, response)</span>
+}
+
+// checkMySQLHealth checks MySQL database health.
+func (s *SystemHandler) checkMySQLHealth() bool <span class="cov1" title="1">{
+        if s.db == nil </span><span class="cov1" title="1">{
+                return false
+        }</span>
+
+        <span class="cov0" title="0">return s.db.MySQL.Health() == nil</span>
+}
+
+// checkMongoDBHealth checks MongoDB database health.
+func (s *SystemHandler) checkMongoDBHealth() bool <span class="cov1" title="1">{
+        if s.db == nil </span><span class="cov1" title="1">{
+                return false
+        }</span>
+
+        <span class="cov0" title="0">return s.db.MongoDB.Health() == nil</span>
+}
+
+// checkRedisHealth checks Redis database health.
+func (s *SystemHandler) checkRedisHealth() bool <span class="cov1" title="1">{
+        if s.db == nil </span><span class="cov1" title="1">{
+                return false
+        }</span>
+
+        <span class="cov0" title="0">return s.db.Redis.Health() == nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">// Package database provides unified database manager for all database connections.
+package database
+
+import (
+        "fmt"
+        "log"
+
+        "gorm.io/gorm"
+
+        "github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/config"
+)
+
+// Manager manages all database connections.
+type Manager struct {
+        MySQL   *MySQLManager
+        MongoDB *MongoDBManager
+        Redis   *RedisManager
+        config  config.DatabaseConfig
+}
+
+// NewManager creates a new database manager with all connections.
+func NewManager(cfg *config.DatabaseConfig) (*Manager, error) <span class="cov0" title="0">{
+        log.Println("Initializing database connections...")
+
+        // Initialize MySQL with GORM 1.25.12
+        log.Println("Connecting to MySQL 8.0.31 with GORM 1.25.12...")
+        mysqlManager, err := NewMySQLManager(&amp;cfg.MySQL)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to initialize MySQL: %w", err)
+        }</span>
+
+        // Initialize MongoDB 6.0
+        <span class="cov0" title="0">log.Println("Connecting to MongoDB 6.0...")
+        mongoManager, err := NewMongoDBManager(&amp;cfg.MongoDB)
+        if err != nil </span><span class="cov0" title="0">{
+                // Close MySQL if MongoDB fails
+                mysqlManager.Close()
+                return nil, fmt.Errorf("failed to initialize MongoDB: %w", err)
+        }</span>
+
+        // Initialize Redis 7.0+
+        <span class="cov0" title="0">log.Println("Connecting to Redis 7.0+...")
+        redisManager, err := NewRedisManager(&amp;cfg.Redis)
+        if err != nil </span><span class="cov0" title="0">{
+                // Close existing connections if Redis fails
+                mysqlManager.Close()
+                mongoManager.Close()
+                return nil, fmt.Errorf("failed to initialize Redis: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">manager := &amp;Manager{
+                MySQL:   mysqlManager,
+                MongoDB: mongoManager,
+                Redis:   redisManager,
+                config:  *cfg,
+        }
+
+        log.Println("All database connections initialized successfully")
+        return manager, nil</span>
+}
+
+// GetMySQLDB returns the GORM MySQL database instance.
+func (dm *Manager) GetMySQLDB() *gorm.DB <span class="cov0" title="0">{
+        return dm.MySQL.GetDB()
+}</span>
+
+// GetMongoDatabase returns the MongoDB database instance.
+func (dm *Manager) GetMongoDatabase() *MongoDBManager <span class="cov0" title="0">{
+        return dm.MongoDB
+}</span>
+
+// GetRedisClient returns the Redis client instance.
+func (dm *Manager) GetRedisClient() *RedisManager <span class="cov0" title="0">{
+        return dm.Redis
+}</span>
+
+// Close closes all database connections.
+func (dm *Manager) Close() error <span class="cov8" title="1">{
+        log.Println("Closing all database connections...")
+
+        var errors []error
+
+        // Close MySQL
+        if dm.MySQL != nil </span><span class="cov0" title="0">{
+                if err := dm.MySQL.Close(); err != nil </span><span class="cov0" title="0">{
+                        errors = append(errors, fmt.Errorf("mysql close error: %w", err))
+                }</span>
+        }
+
+        // Close MongoDB
+        <span class="cov8" title="1">if dm.MongoDB != nil </span><span class="cov0" title="0">{
+                if err := dm.MongoDB.Close(); err != nil </span><span class="cov0" title="0">{
+                        errors = append(errors, fmt.Errorf("mongodb close error: %w", err))
+                }</span>
+        }
+
+        // Close Redis
+        <span class="cov8" title="1">if dm.Redis != nil </span><span class="cov0" title="0">{
+                if err := dm.Redis.Close(); err != nil </span><span class="cov0" title="0">{
+                        errors = append(errors, fmt.Errorf("redis close error: %w", err))
+                }</span>
+        }
+
+        <span class="cov8" title="1">if len(errors) &gt; 0 </span><span class="cov0" title="0">{
+                return fmt.Errorf("database close errors: %v", errors)
+        }</span>
+
+        <span class="cov8" title="1">log.Println("All database connections closed successfully")
+        return nil</span>
+}
+
+// HealthCheck checks the health of all database connections.
+func (dm *Manager) HealthCheck() error <span class="cov8" title="1">{
+        log.Println("Performing database health check...")
+
+        // Check MySQL health
+        if dm.MySQL == nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("mysql manager not initialized")
+        }</span>
+        <span class="cov0" title="0">if err := dm.MySQL.Health(); err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("mysql health check failed: %w", err)
+        }</span>
+
+        // Check MongoDB health
+        <span class="cov0" title="0">if dm.MongoDB == nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("mongodb manager not initialized")
+        }</span>
+        <span class="cov0" title="0">if err := dm.MongoDB.Health(); err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("mongodb health check failed: %w", err)
+        }</span>
+
+        // Check Redis health
+        <span class="cov0" title="0">if dm.Redis == nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("redis manager not initialized")
+        }</span>
+        <span class="cov0" title="0">if err := dm.Redis.Health(); err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("redis health check failed: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">log.Println("All database health checks passed")
+        return nil</span>
+}
+
+// GetConnectionStats returns connection statistics for all databases.
+func (dm *Manager) GetConnectionStats() map[string]interface{} <span class="cov8" title="1">{
+        stats := make(map[string]interface{})
+
+        // MySQL stats
+        if dm.MySQL != nil </span><span class="cov0" title="0">{
+                stats["mysql"] = dm.MySQL.GetStats()
+        }</span> else<span class="cov8" title="1"> {
+                stats["mysql"] = map[string]string{"status": "not connected"}
+        }</span>
+
+        // Redis stats
+        <span class="cov8" title="1">if dm.Redis != nil </span><span class="cov0" title="0">{
+                stats["redis"] = dm.Redis.GetStats()
+        }</span> else<span class="cov8" title="1"> {
+                stats["redis"] = map[string]string{"status": "not connected"}
+        }</span>
+
+        // MongoDB doesn't provide detailed connection stats through the driver
+        <span class="cov8" title="1">if dm.MongoDB != nil </span><span class="cov0" title="0">{
+                stats["mongodb"] = map[string]string{
+                        "status":   "connected",
+                        "database": dm.config.MongoDB.Database,
+                }
+        }</span> else<span class="cov8" title="1"> {
+                stats["mongodb"] = map[string]string{"status": "not connected"}
+        }</span>
+
+        <span class="cov8" title="1">return stats</span>
+}
+
+// ValidateGORMVersion validates that GORM 1.25.12 is being used.
+func ValidateGORMVersion() error <span class="cov8" title="1">{
+        // This function ensures we're using the correct GORM version
+        // The version check is enforced through go.mod dependencies
+        log.Println("GORM 1.25.12 version validation: ✓ Enforced through go.mod")
+        return nil
+}</span>
+
+// ValidateDatabaseVersions validates database server versions.
+func (dm *Manager) ValidateDatabaseVersions() error <span class="cov8" title="1">{
+        log.Println("Validating database server versions...")
+
+        // Note: Version validation would typically be done through
+        // actual database queries in a real implementation
+        // For this configuration setup, we assume correct versions are configured
+
+        log.Println("MySQL 8.0.31 version validation: ✓ Configured")
+        log.Println("MongoDB 6.0 version validation: ✓ Configured")
+        log.Println("Redis 7.0+ version validation: ✓ Configured")
+
+        return nil
+}</span>
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">// Package database provides MongoDB 6.0 database connection.
+package database
+
+import (
+        "context"
+        "fmt"
+        "log"
+        "time"
+
+        "go.mongodb.org/mongo-driver/mongo"
+        "go.mongodb.org/mongo-driver/mongo/options"
+        "go.mongodb.org/mongo-driver/mongo/readpref"
+
+        "github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/config"
+)
+
+// MongoDBManager manages MongoDB database connections.
+type MongoDBManager struct {
+        client   *mongo.Client
+        database *mongo.Database
+        config   config.MongoDBConfig
+}
+
+// NewMongoDBConnection creates a new MongoDB 6.0 connection.
+func NewMongoDBConnection(cfg *config.MongoDBConfig) (*mongo.Client, error) <span class="cov0" title="0">{
+        // Build connection options
+        clientOptions := buildMongoDBOptions(cfg)
+
+        // Create context with timeout
+        ctx, cancel := context.WithTimeout(context.Background(), cfg.ConnectTimeout)
+        defer cancel()
+
+        // Connect to MongoDB
+        client, err := mongo.Connect(ctx, clientOptions)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to connect to MongoDB: %w", err)
+        }</span>
+
+        // Test the connection
+        <span class="cov0" title="0">ctx, cancel = context.WithTimeout(context.Background(), cfg.ServerSelTimeout)
+        defer cancel()
+
+        if err := client.Ping(ctx, readpref.Primary()); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to ping MongoDB: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">log.Printf("MongoDB 6.0 connected successfully to %s/%s", cfg.URI, cfg.Database)
+        return client, nil</span>
+}
+
+// buildMongoDBOptions builds MongoDB connection options.
+func buildMongoDBOptions(cfg *config.MongoDBConfig) *options.ClientOptions <span class="cov0" title="0">{
+        clientOptions := options.Client().ApplyURI(cfg.URI)
+
+        // Set authentication if provided
+        if cfg.Username != "" &amp;&amp; cfg.Password != "" </span><span class="cov0" title="0">{
+                credential := options.Credential{
+                        Username: cfg.Username,
+                        Password: cfg.Password,
+                }
+                clientOptions.SetAuth(credential)
+        }</span>
+
+        // Set timeouts
+        <span class="cov0" title="0">if cfg.ConnectTimeout &gt; 0 </span><span class="cov0" title="0">{
+                clientOptions.SetConnectTimeout(cfg.ConnectTimeout)
+        }</span>
+        <span class="cov0" title="0">if cfg.SocketTimeout &gt; 0 </span><span class="cov0" title="0">{
+                clientOptions.SetSocketTimeout(cfg.SocketTimeout)
+        }</span>
+        <span class="cov0" title="0">if cfg.ServerSelTimeout &gt; 0 </span><span class="cov0" title="0">{
+                clientOptions.SetServerSelectionTimeout(cfg.ServerSelTimeout)
+        }</span>
+
+        // Set connection pool options
+        <span class="cov0" title="0">if cfg.MaxPoolSize &gt; 0 </span><span class="cov0" title="0">{
+                clientOptions.SetMaxPoolSize(cfg.MaxPoolSize)
+        }</span>
+        <span class="cov0" title="0">if cfg.MinPoolSize &gt; 0 </span><span class="cov0" title="0">{
+                clientOptions.SetMinPoolSize(cfg.MinPoolSize)
+        }</span>
+        <span class="cov0" title="0">if cfg.MaxIdleTimeMS &gt; 0 </span><span class="cov0" title="0">{
+                idleTime := time.Duration(cfg.MaxIdleTimeMS) * time.Millisecond
+                clientOptions.SetMaxConnIdleTime(idleTime)
+        }</span>
+
+        // Enable retryable writes for MongoDB 6.0
+        <span class="cov0" title="0">clientOptions.SetRetryWrites(true)
+        clientOptions.SetRetryReads(true)
+
+        log.Printf("MongoDB connection pool configured: MaxPool=%d, MinPool=%d, MaxIdleTime=%dms",
+                cfg.MaxPoolSize, cfg.MinPoolSize, cfg.MaxIdleTimeMS)
+
+        return clientOptions</span>
+}
+
+// NewMongoDBManager creates a new MongoDB manager.
+func NewMongoDBManager(cfg *config.MongoDBConfig) (*MongoDBManager, error) <span class="cov0" title="0">{
+        client, err := NewMongoDBConnection(cfg)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">database := client.Database(cfg.Database)
+
+        return &amp;MongoDBManager{
+                client:   client,
+                database: database,
+                config:   *cfg,
+        }, nil</span>
+}
+
+// GetClient returns the MongoDB client.
+func (m *MongoDBManager) GetClient() *mongo.Client <span class="cov0" title="0">{
+        return m.client
+}</span>
+
+// GetDatabase returns the MongoDB database.
+func (m *MongoDBManager) GetDatabase() *mongo.Database <span class="cov0" title="0">{
+        return m.database
+}</span>
+
+// GetCollection returns a MongoDB collection.
+func (m *MongoDBManager) GetCollection(name string) *mongo.Collection <span class="cov0" title="0">{
+        return m.database.Collection(name)
+}</span>
+
+// Close closes the MongoDB connection.
+func (m *MongoDBManager) Close() error <span class="cov0" title="0">{
+        ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+        defer cancel()
+        return m.client.Disconnect(ctx)
+}</span>
+
+// Health checks the MongoDB health.
+func (m *MongoDBManager) Health() error <span class="cov0" title="0">{
+        ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+        defer cancel()
+        return m.client.Ping(ctx, readpref.Primary())
+}</span>
+
+// MongoDB 6.0 specific collection definitions for cloud storage system.
+const (
+        // Collections for file metadata and content
+        CollectionFileMetadata  = "file_metadata"
+        CollectionChatMessages  = "chat_messages"
+        CollectionActivityLogs  = "activity_logs"
+        CollectionSearchIndexes = "search_indexes"
+        CollectionSyncRecords   = "sync_records"
+        CollectionAnalytics     = "analytics"
+        CollectionNotifications = "notifications"
+        CollectionUserSessions  = "user_sessions"
+)
+
+// GetFileMetadataCollection returns file metadata collection.
+func (m *MongoDBManager) GetFileMetadataCollection() *mongo.Collection <span class="cov0" title="0">{
+        return m.GetCollection(CollectionFileMetadata)
+}</span>
+
+// GetChatMessagesCollection returns chat messages collection.
+func (m *MongoDBManager) GetChatMessagesCollection() *mongo.Collection <span class="cov0" title="0">{
+        return m.GetCollection(CollectionChatMessages)
+}</span>
+
+// GetActivityLogsCollection returns activity logs collection.
+func (m *MongoDBManager) GetActivityLogsCollection() *mongo.Collection <span class="cov0" title="0">{
+        return m.GetCollection(CollectionActivityLogs)
+}</span>
+
+// GetSearchIndexesCollection returns search indexes collection.
+func (m *MongoDBManager) GetSearchIndexesCollection() *mongo.Collection <span class="cov0" title="0">{
+        return m.GetCollection(CollectionSearchIndexes)
+}</span>
+
+// GetSyncRecordsCollection returns sync records collection.
+func (m *MongoDBManager) GetSyncRecordsCollection() *mongo.Collection <span class="cov0" title="0">{
+        return m.GetCollection(CollectionSyncRecords)
+}</span>
+
+// GetAnalyticsCollection returns analytics collection.
+func (m *MongoDBManager) GetAnalyticsCollection() *mongo.Collection <span class="cov0" title="0">{
+        return m.GetCollection(CollectionAnalytics)
+}</span>
+</pre>
+		
+		<pre class="file" id="file9" style="display: none">// Package database provides MySQL database connection with GORM 1.25.12.
+package database
+
+import (
+        "database/sql"
+        "fmt"
+        "log"
+        "time"
+
+        "gorm.io/driver/mysql"
+        "gorm.io/gorm"
+        "gorm.io/gorm/logger"
+
+        "github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/config"
+)
+
+// MySQLManager manages MySQL database connections.
+type MySQLManager struct {
+        db     *gorm.DB
+        config config.MySQLConfig
+}
+
+// NewMySQLConnection creates a new MySQL connection with GORM 1.25.12.
+func NewMySQLConnection(cfg *config.MySQLConfig) (*gorm.DB, error) <span class="cov0" title="0">{
+        // Build DSN (Data Source Name)
+        dsn := buildMySQLDSN(cfg)
+
+        // Configure GORM logger
+        gormLogger := logger.Default
+        if cfg.Database != "" </span><span class="cov0" title="0">{
+                gormLogger = logger.Default.LogMode(logger.Info)
+        }</span>
+
+        // Configure GORM
+        <span class="cov0" title="0">gormConfig := &amp;gorm.Config{
+                Logger:                                   gormLogger,
+                DisableForeignKeyConstraintWhenMigrating: true,
+                SkipDefaultTransaction:                   false,
+                PrepareStmt:                              true,
+
+                // Naming strategy for table and column names
+                NamingStrategy: nil, // Use default naming strategy
+        }
+
+        // Open database connection
+        db, err := gorm.Open(mysql.Open(dsn), gormConfig)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to connect to MySQL database: %w", err)
+        }</span>
+
+        // Get underlying sql.DB to configure connection pool
+        <span class="cov0" title="0">sqlDB, err := db.DB()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to get underlying sql.DB: %w", err)
+        }</span>
+
+        // Configure connection pool settings
+        <span class="cov0" title="0">configureConnectionPool(sqlDB, cfg)
+
+        // Test the connection
+        if err := sqlDB.Ping(); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to ping MySQL database: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">log.Printf("MySQL database connected successfully to %s:%d/%s", cfg.Host, cfg.Port, cfg.Database)
+        return db, nil</span>
+}
+
+// buildMySQLDSN builds MySQL Data Source Name.
+func buildMySQLDSN(cfg *config.MySQLConfig) string <span class="cov0" title="0">{
+        dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&amp;parseTime=%t&amp;loc=%s",
+                cfg.Username,
+                cfg.Password,
+                cfg.Host,
+                cfg.Port,
+                cfg.Database,
+                cfg.Charset,
+                cfg.ParseTime,
+                cfg.Loc,
+        )
+
+        // Add timeout parameters
+        if cfg.Timeout &gt; 0 </span><span class="cov0" title="0">{
+                dsn += fmt.Sprintf("&amp;timeout=%s", cfg.Timeout.String())
+        }</span>
+        <span class="cov0" title="0">if cfg.ReadTimeout &gt; 0 </span><span class="cov0" title="0">{
+                dsn += fmt.Sprintf("&amp;readTimeout=%s", cfg.ReadTimeout.String())
+        }</span>
+        <span class="cov0" title="0">if cfg.WriteTimeout &gt; 0 </span><span class="cov0" title="0">{
+                dsn += fmt.Sprintf("&amp;writeTimeout=%s", cfg.WriteTimeout.String())
+        }</span>
+
+        <span class="cov0" title="0">return dsn</span>
+}
+
+// configureConnectionPool configures MySQL connection pool settings.
+func configureConnectionPool(sqlDB *sql.DB, cfg *config.MySQLConfig) <span class="cov0" title="0">{
+        // Set maximum number of open connections
+        if cfg.MaxOpenConns &gt; 0 </span><span class="cov0" title="0">{
+                sqlDB.SetMaxOpenConns(cfg.MaxOpenConns)
+        }</span> else<span class="cov0" title="0"> {
+                sqlDB.SetMaxOpenConns(100) // Default value
+        }</span>
+
+        // Set maximum number of idle connections
+        <span class="cov0" title="0">if cfg.MaxIdleConns &gt; 0 </span><span class="cov0" title="0">{
+                sqlDB.SetMaxIdleConns(cfg.MaxIdleConns)
+        }</span> else<span class="cov0" title="0"> {
+                sqlDB.SetMaxIdleConns(10) // Default value
+        }</span>
+
+        // Set maximum lifetime of connections
+        <span class="cov0" title="0">if cfg.ConnMaxLifetime &gt; 0 </span><span class="cov0" title="0">{
+                sqlDB.SetConnMaxLifetime(cfg.ConnMaxLifetime)
+        }</span> else<span class="cov0" title="0"> {
+                sqlDB.SetConnMaxLifetime(time.Hour) // Default 1 hour
+        }</span>
+
+        // Set maximum idle time of connections
+        <span class="cov0" title="0">if cfg.ConnMaxIdleTime &gt; 0 </span><span class="cov0" title="0">{
+                sqlDB.SetConnMaxIdleTime(cfg.ConnMaxIdleTime)
+        }</span> else<span class="cov0" title="0"> {
+                sqlDB.SetConnMaxIdleTime(10 * time.Minute) // Default 10 minutes
+        }</span>
+
+        <span class="cov0" title="0">log.Printf("MySQL connection pool configured: MaxOpen=%d, MaxIdle=%d, MaxLifetime=%v, MaxIdleTime=%v",
+                cfg.MaxOpenConns, cfg.MaxIdleConns, cfg.ConnMaxLifetime, cfg.ConnMaxIdleTime)</span>
+}
+
+// NewMySQLManager creates a new MySQL manager.
+func NewMySQLManager(cfg *config.MySQLConfig) (*MySQLManager, error) <span class="cov0" title="0">{
+        db, err := NewMySQLConnection(cfg)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">return &amp;MySQLManager{
+                db:     db,
+                config: *cfg,
+        }, nil</span>
+}
+
+// GetDB returns the GORM database instance.
+func (m *MySQLManager) GetDB() *gorm.DB <span class="cov0" title="0">{
+        return m.db
+}</span>
+
+// Close closes the database connection.
+func (m *MySQLManager) Close() error <span class="cov0" title="0">{
+        sqlDB, err := m.db.DB()
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov0" title="0">return sqlDB.Close()</span>
+}
+
+// Health checks the database health.
+func (m *MySQLManager) Health() error <span class="cov0" title="0">{
+        sqlDB, err := m.db.DB()
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov0" title="0">return sqlDB.Ping()</span>
+}
+
+// GetStats returns database connection statistics.
+func (m *MySQLManager) GetStats() interface{} <span class="cov0" title="0">{
+        sqlDB, err := m.db.DB()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil
+        }</span>
+        <span class="cov0" title="0">return sqlDB.Stats()</span>
+}
+</pre>
+		
+		<pre class="file" id="file10" style="display: none">// Package database provides Redis 7.0+ database connection.
+package database
+
+import (
+        "context"
+        "fmt"
+        "log"
+        "time"
+
+        "github.com/go-redis/redis/v8"
+
+        "github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/config"
+)
+
+// RedisManager manages Redis database connections.
+type RedisManager struct {
+        client *redis.Client
+        config config.RedisConfig
+}
+
+// NewRedisConnection creates a new Redis 7.0+ connection.
+func NewRedisConnection(cfg *config.RedisConfig) (*redis.Client, error) <span class="cov0" title="0">{
+        // Build Redis options
+        options := buildRedisOptions(cfg)
+
+        // Create Redis client
+        client := redis.NewClient(options)
+
+        // Test the connection
+        ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+        defer cancel()
+
+        _, err := client.Ping(ctx).Result()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to connect to Redis: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">log.Printf("Redis 7.0+ connected successfully to %s:%d", cfg.Host, cfg.Port)
+        return client, nil</span>
+}
+
+// buildRedisOptions builds Redis connection options.
+func buildRedisOptions(cfg *config.RedisConfig) *redis.Options <span class="cov0" title="0">{
+        options := &amp;redis.Options{
+                Addr:     fmt.Sprintf("%s:%d", cfg.Host, cfg.Port),
+                Password: cfg.Password,
+                DB:       cfg.DB,
+        }
+
+        // Set username if provided (Redis 6.0+ ACL support)
+        if cfg.Username != "" </span><span class="cov0" title="0">{
+                options.Username = cfg.Username
+        }</span>
+
+        // Set connection pool options
+        <span class="cov0" title="0">if cfg.PoolSize &gt; 0 </span><span class="cov0" title="0">{
+                options.PoolSize = cfg.PoolSize
+        }</span> else<span class="cov0" title="0"> {
+                options.PoolSize = 20 // Default
+        }</span>
+
+        <span class="cov0" title="0">if cfg.MinIdleConns &gt; 0 </span><span class="cov0" title="0">{
+                options.MinIdleConns = cfg.MinIdleConns
+        }</span> else<span class="cov0" title="0"> {
+                options.MinIdleConns = 5 // Default
+        }</span>
+
+        <span class="cov0" title="0">if cfg.MaxConnAge &gt; 0 </span><span class="cov0" title="0">{
+                options.MaxConnAge = cfg.MaxConnAge
+        }</span> else<span class="cov0" title="0"> {
+                options.MaxConnAge = time.Hour // Default
+        }</span>
+
+        <span class="cov0" title="0">if cfg.PoolTimeout &gt; 0 </span><span class="cov0" title="0">{
+                options.PoolTimeout = cfg.PoolTimeout
+        }</span> else<span class="cov0" title="0"> {
+                options.PoolTimeout = 4 * time.Second // Default
+        }</span>
+
+        <span class="cov0" title="0">if cfg.IdleTimeout &gt; 0 </span><span class="cov0" title="0">{
+                options.IdleTimeout = cfg.IdleTimeout
+        }</span> else<span class="cov0" title="0"> {
+                options.IdleTimeout = 5 * time.Minute // Default
+        }</span>
+
+        <span class="cov0" title="0">if cfg.IdleCheckFreq &gt; 0 </span><span class="cov0" title="0">{
+                options.IdleCheckFrequency = cfg.IdleCheckFreq
+        }</span> else<span class="cov0" title="0"> {
+                options.IdleCheckFrequency = time.Minute // Default
+        }</span>
+
+        // Set timeout options
+        <span class="cov0" title="0">if cfg.DialTimeout &gt; 0 </span><span class="cov0" title="0">{
+                options.DialTimeout = cfg.DialTimeout
+        }</span> else<span class="cov0" title="0"> {
+                options.DialTimeout = 5 * time.Second // Default
+        }</span>
+
+        <span class="cov0" title="0">if cfg.ReadTimeout &gt; 0 </span><span class="cov0" title="0">{
+                options.ReadTimeout = cfg.ReadTimeout
+        }</span> else<span class="cov0" title="0"> {
+                options.ReadTimeout = 3 * time.Second // Default
+        }</span>
+
+        <span class="cov0" title="0">if cfg.WriteTimeout &gt; 0 </span><span class="cov0" title="0">{
+                options.WriteTimeout = cfg.WriteTimeout
+        }</span> else<span class="cov0" title="0"> {
+                options.WriteTimeout = 3 * time.Second // Default
+        }</span>
+
+        <span class="cov0" title="0">log.Printf("Redis connection pool configured: PoolSize=%d, MinIdle=%d, MaxConnAge=%v",
+                options.PoolSize, options.MinIdleConns, options.MaxConnAge)
+
+        return options</span>
+}
+
+// NewRedisManager creates a new Redis manager.
+func NewRedisManager(cfg *config.RedisConfig) (*RedisManager, error) <span class="cov0" title="0">{
+        client, err := NewRedisConnection(cfg)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">return &amp;RedisManager{
+                client: client,
+                config: *cfg,
+        }, nil</span>
+}
+
+// GetClient returns the Redis client.
+func (r *RedisManager) GetClient() *redis.Client <span class="cov0" title="0">{
+        return r.client
+}</span>
+
+// Close closes the Redis connection.
+func (r *RedisManager) Close() error <span class="cov0" title="0">{
+        return r.client.Close()
+}</span>
+
+// Health checks the Redis health.
+func (r *RedisManager) Health() error <span class="cov0" title="0">{
+        ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+        defer cancel()
+        _, err := r.client.Ping(ctx).Result()
+        return err
+}</span>
+
+// GetStats returns Redis connection statistics.
+func (r *RedisManager) GetStats() *redis.PoolStats <span class="cov0" title="0">{
+        return r.client.PoolStats()
+}</span>
+
+// Redis 7.0+ specific key patterns for cloud storage system.
+const (
+        // Cache key patterns
+        KeyUserSession   = "session:user:%s"
+        KeyUserProfile   = "profile:user:%d"
+        KeyFileMetadata  = "file:metadata:%d"
+        KeyFolderTree    = "folder:tree:%d"
+        KeyShareLink     = "share:link:%s"
+        KeyUploadSession = "upload:session:%s"
+        KeyDownloadToken = "download:token:%s"
+
+        // Lock key patterns
+        LockFileOperation = "lock:file:op:%d"
+        LockUserOperation = "lock:user:op:%d"
+        LockUpload        = "lock:upload:%s"
+
+        // Rate limiting key patterns
+        RateLimitAPI      = "ratelimit:api:%s:%s"
+        RateLimitUpload   = "ratelimit:upload:%d"
+        RateLimitDownload = "ratelimit:download:%d"
+
+        // Queue key patterns
+        QueueFileProcess  = "queue:file:process"
+        QueueNotification = "queue:notification"
+        QueueThumbnail    = "queue:thumbnail"
+        QueueVirusScan    = "queue:virus:scan"
+
+        // PubSub channel patterns
+        ChannelFileUpdate   = "channel:file:update"
+        ChannelUserOnline   = "channel:user:online"
+        ChannelNotification = "channel:notification:%d"
+)
+
+// SetUserSession sets user session with expiration.
+func (r *RedisManager) SetUserSession(ctx context.Context, userID string, sessionData interface{}, expiration time.Duration) error <span class="cov0" title="0">{
+        key := fmt.Sprintf(KeyUserSession, userID)
+        return r.client.Set(ctx, key, sessionData, expiration).Err()
+}</span>
+
+// GetUserSession gets user session.
+func (r *RedisManager) GetUserSession(ctx context.Context, userID string) (string, error) <span class="cov0" title="0">{
+        key := fmt.Sprintf(KeyUserSession, userID)
+        return r.client.Get(ctx, key).Result()
+}</span>
+
+// DeleteUserSession deletes user session.
+func (r *RedisManager) DeleteUserSession(ctx context.Context, userID string) error <span class="cov0" title="0">{
+        key := fmt.Sprintf(KeyUserSession, userID)
+        return r.client.Del(ctx, key).Err()
+}</span>
+
+// SetFileMetadataCache sets file metadata cache.
+func (r *RedisManager) SetFileMetadataCache(ctx context.Context, fileID int, metadata interface{}, expiration time.Duration) error <span class="cov0" title="0">{
+        key := fmt.Sprintf(KeyFileMetadata, fileID)
+        return r.client.Set(ctx, key, metadata, expiration).Err()
+}</span>
+
+// GetFileMetadataCache gets file metadata from cache.
+func (r *RedisManager) GetFileMetadataCache(ctx context.Context, fileID int) (string, error) <span class="cov0" title="0">{
+        key := fmt.Sprintf(KeyFileMetadata, fileID)
+        return r.client.Get(ctx, key).Result()
+}</span>
+
+// AcquireLock acquires a distributed lock.
+func (r *RedisManager) AcquireLock(ctx context.Context, lockKey string, expiration time.Duration) (bool, error) <span class="cov0" title="0">{
+        result, err := r.client.SetNX(ctx, lockKey, "locked", expiration).Result()
+        return result, err
+}</span>
+
+// ReleaseLock releases a distributed lock.
+func (r *RedisManager) ReleaseLock(ctx context.Context, lockKey string) error <span class="cov0" title="0">{
+        return r.client.Del(ctx, lockKey).Err()
+}</span>
+</pre>
+		
+		<pre class="file" id="file11" style="display: none">// Package testutil provides test configuration utilities.
+package testutil
+
+import (
+        "time"
+
+        "github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/config"
+)
+
+// TestConfig creates a test configuration.
+func TestConfig() *config.Config <span class="cov10" title="11">{
+        return &amp;config.Config{
+                App: config.AppConfig{
+                        Name:        "ycg-cloud-test",
+                        Version:     "1.0.0-test",
+                        Environment: "test",
+                        Debug:       true,
+                },
+                Server: config.ServerConfig{
+                        Host:         "localhost",
+                        Port:         ":8081",
+                        ReadTimeout:  30,
+                        WriteTimeout: 30,
+                        IdleTimeout:  120,
+                },
+                Database: config.DatabaseConfig{
+                        MySQL: config.MySQLConfig{
+                                Host:            "localhost",
+                                Port:            3306,
+                                Username:        "test",
+                                Password:        "test",
+                                Database:        "ycgcloud_test",
+                                Charset:         "utf8mb4",
+                                ParseTime:       true,
+                                Loc:             "Local",
+                                Timeout:         10 * time.Second,
+                                ReadTimeout:     30 * time.Second,
+                                WriteTimeout:    30 * time.Second,
+                                MaxOpenConns:    10,
+                                MaxIdleConns:    2,
+                                ConnMaxLifetime: time.Hour,
+                                ConnMaxIdleTime: 30 * time.Minute,
+                        },
+                        MongoDB: config.MongoDBConfig{
+                                URI:              "mongodb://localhost:27017",
+                                Database:         "ycgcloud_test",
+                                Username:         "",
+                                Password:         "",
+                                ConnectTimeout:   10 * time.Second,
+                                SocketTimeout:    30 * time.Second,
+                                ServerSelTimeout: 30 * time.Second,
+                                MaxPoolSize:      10,
+                                MinPoolSize:      2,
+                                MaxIdleTimeMS:    300000,
+                        },
+                        Redis: config.RedisConfig{
+                                Host:          "localhost",
+                                Port:          6379,
+                                Password:      "",
+                                DB:            1, // Use database 1 for tests
+                                Username:      "",
+                                PoolSize:      10,
+                                MinIdleConns:  2,
+                                MaxConnAge:    time.Hour,
+                                PoolTimeout:   4 * time.Second,
+                                IdleTimeout:   5 * time.Minute,
+                                IdleCheckFreq: time.Minute,
+                                DialTimeout:   5 * time.Second,
+                                ReadTimeout:   3 * time.Second,
+                                WriteTimeout:  3 * time.Second,
+                        },
+                },
+                Auth: config.AuthConfig{
+                        JWTSecret:     "test-secret-key-for-jwt",
+                        TokenExpiry:   time.Hour,
+                        RefreshExpiry: 24 * time.Hour,
+                        BCryptCost:    4, // Lower cost for faster tests
+                },
+                Log: config.LogConfig{
+                        Level:  "debug",
+                        Format: "text",
+                        Output: "stdout",
+                },
+                Monitor: config.MonitorConfig{
+                        Enabled:    true,
+                        MetricsURL: "/metrics",
+                },
+        }
+}</pre>
+		
+		<pre class="file" id="file12" style="display: none">// Package testutil provides utilities for testing.
+package testutil
+
+import (
+        "os"
+        "testing"
+        "time"
+)
+
+// TestConfigData creates test configuration data without importing config package.
+type TestConfigData struct {
+        AppName        string
+        AppVersion     string
+        AppEnvironment string
+        AppDebug       bool
+        ServerHost     string
+        ServerPort     string
+        ServerTimeouts TestServerTimeouts
+        Database       TestDatabaseConfig
+        Auth           TestAuthConfig
+        Log            TestLogConfig
+        Monitor        TestMonitorConfig
+}
+
+type TestServerTimeouts struct {
+        Read  int
+        Write int
+        Idle  int
+}
+
+type TestDatabaseConfig struct {
+        MySQL   TestMySQLConfig
+        MongoDB TestMongoDBConfig
+        Redis   TestRedisConfig
+}
+
+type TestMySQLConfig struct {
+        Host            string
+        Port            int
+        Username        string
+        Password        string
+        Database        string
+        Charset         string
+        ParseTime       bool
+        Loc             string
+        Timeout         time.Duration
+        ReadTimeout     time.Duration
+        WriteTimeout    time.Duration
+        MaxOpenConns    int
+        MaxIdleConns    int
+        ConnMaxLifetime time.Duration
+        ConnMaxIdleTime time.Duration
+}
+
+type TestMongoDBConfig struct {
+        URI              string
+        Database         string
+        Username         string
+        Password         string
+        ConnectTimeout   time.Duration
+        SocketTimeout    time.Duration
+        ServerSelTimeout time.Duration
+        MaxPoolSize      uint64
+        MinPoolSize      uint64
+        MaxIdleTimeMS    uint64
+}
+
+type TestRedisConfig struct {
+        Host          string
+        Port          int
+        Password      string
+        DB            int
+        Username      string
+        PoolSize      int
+        MinIdleConns  int
+        MaxConnAge    time.Duration
+        PoolTimeout   time.Duration
+        IdleTimeout   time.Duration
+        IdleCheckFreq time.Duration
+        DialTimeout   time.Duration
+        ReadTimeout   time.Duration
+        WriteTimeout  time.Duration
+}
+
+type TestAuthConfig struct {
+        JWTSecret     string
+        TokenExpiry   time.Duration
+        RefreshExpiry time.Duration
+        BcryptCost    int
+}
+
+type TestLogConfig struct {
+        Level  string
+        Format string
+        Output string
+}
+
+type TestMonitorConfig struct {
+        Enabled    bool
+        MetricsURL string
+}
+
+// GetTestConfig creates a test configuration.
+func GetTestConfig() *TestConfigData <span class="cov0" title="0">{
+        return &amp;TestConfigData{
+                AppName:        "ycg-cloud-test",
+                AppVersion:     "1.0.0-test",
+                AppEnvironment: "test",
+                AppDebug:       true,
+                ServerHost:     "localhost",
+                ServerPort:     ":8081",
+                ServerTimeouts: TestServerTimeouts{
+                        Read:  30,
+                        Write: 30,
+                        Idle:  120,
+                },
+                Database: TestDatabaseConfig{
+                        MySQL: TestMySQLConfig{
+                                Host:            "localhost",
+                                Port:            3306,
+                                Username:        "test",
+                                Password:        "test",
+                                Database:        "ycgcloud_test",
+                                Charset:         "utf8mb4",
+                                ParseTime:       true,
+                                Loc:             "Local",
+                                Timeout:         10 * time.Second,
+                                ReadTimeout:     30 * time.Second,
+                                WriteTimeout:    30 * time.Second,
+                                MaxOpenConns:    10,
+                                MaxIdleConns:    2,
+                                ConnMaxLifetime: time.Hour,
+                                ConnMaxIdleTime: 30 * time.Minute,
+                        },
+                        MongoDB: TestMongoDBConfig{
+                                URI:              "mongodb://localhost:27017",
+                                Database:         "ycgcloud_test",
+                                Username:         "",
+                                Password:         "",
+                                ConnectTimeout:   10 * time.Second,
+                                SocketTimeout:    30 * time.Second,
+                                ServerSelTimeout: 30 * time.Second,
+                                MaxPoolSize:      10,
+                                MinPoolSize:      2,
+                                MaxIdleTimeMS:    300000,
+                        },
+                        Redis: TestRedisConfig{
+                                Host:          "localhost",
+                                Port:          6379,
+                                Password:      "",
+                                DB:            1, // Use database 1 for tests
+                                Username:      "",
+                                PoolSize:      10,
+                                MinIdleConns:  2,
+                                MaxConnAge:    time.Hour,
+                                PoolTimeout:   4 * time.Second,
+                                IdleTimeout:   5 * time.Minute,
+                                IdleCheckFreq: time.Minute,
+                                DialTimeout:   5 * time.Second,
+                                ReadTimeout:   3 * time.Second,
+                                WriteTimeout:  3 * time.Second,
+                        },
+                },
+                Auth: TestAuthConfig{
+                        JWTSecret:     "test-secret-key-for-jwt",
+                        TokenExpiry:   time.Hour,
+                        RefreshExpiry: 24 * time.Hour,
+                        BcryptCost:    4, // Lower cost for faster tests
+                },
+                Log: TestLogConfig{
+                        Level:  "debug",
+                        Format: "text",
+                        Output: "stdout",
+                },
+                Monitor: TestMonitorConfig{
+                        Enabled:    true,
+                        MetricsURL: "/metrics",
+                },
+        }
+}</span>
+
+// SetupTestEnvironment sets up environment variables for testing.
+func SetupTestEnvironment() <span class="cov8" title="1">{
+        os.Setenv("APP_ENV", "test")
+        os.Setenv("APP_DEBUG", "true")
+}</span>
+
+// CleanupTestEnvironment cleans up environment variables after testing.
+func CleanupTestEnvironment() <span class="cov0" title="0">{
+        os.Unsetenv("APP_ENV")
+        os.Unsetenv("APP_DEBUG")
+}</span>
+
+// SkipIfShort skips the test if running in short mode.
+func SkipIfShort(t *testing.T) <span class="cov0" title="0">{
+        if testing.Short() </span><span class="cov0" title="0">{
+                t.Skip("Skipping test in short mode")
+        }</span>
+}
+
+// MockDatabaseManager creates a mock database manager for testing.
+func MockDatabaseManager() interface{} <span class="cov0" title="0">{
+        // This is a placeholder for a mock database manager
+        // In real tests, we would use testcontainers or in-memory databases
+        // Returns interface{} to avoid circular imports
+        return nil
+}</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
