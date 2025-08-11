@@ -59,8 +59,7 @@ linters:
     - errname         # Check that sentinel errors are prefixed with the Err and error types are suffixed with the Error
     - errorlint       # Find code that will cause problems with the error wrapping scheme introduced in Go 1.13
     
-    # Naming conventions
-    - stylecheck      # Replacement for golint
+    # Note: stylecheck removed due to compatibility issues with latest golangci-lint
 
   settings:
     errcheck:
@@ -158,8 +157,7 @@ linters:
         - name: unreachable-code
         - name: redefines-builtin-id
 
-    stylecheck:
-      checks: ["all", "-ST1000", "-ST1003", "-ST1016", "-ST1020", "-ST1021", "-ST1022"]
+
 
 issues:
   max-issues-per-linter: 50

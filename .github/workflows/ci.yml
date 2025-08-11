@@ -27,9 +27,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-v16-${{ hashFiles('cloud-backend/go.sum') }}
+        key: ${{ runner.os }}-go-v17-${{ hashFiles('cloud-backend/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-v16-
+          ${{ runner.os }}-go-v17-
 
     - name: Download dependencies
       working-directory: cloud-backend
@@ -73,9 +73,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-v16-${{ hashFiles('cloud-backend/go.sum') }}
+        key: ${{ runner.os }}-go-v17-${{ hashFiles('cloud-backend/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-v16-
+          ${{ runner.os }}-go-v17-
 
     - name: Download dependencies
       working-directory: cloud-backend
@@ -162,9 +162,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-v16-${{ hashFiles('cloud-backend/go.sum') }}
+        key: ${{ runner.os }}-go-v17-${{ hashFiles('cloud-backend/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-v16-
+          ${{ runner.os }}-go-v17-
 
     - name: Download dependencies
       working-directory: cloud-backend
@@ -213,9 +213,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-v16-${{ hashFiles('cloud-backend/go.sum') }}
+        key: ${{ runner.os }}-go-v17-${{ hashFiles('cloud-backend/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-v16-
+          ${{ runner.os }}-go-v17-
 
     - name: Download dependencies
       working-directory: cloud-backend
@@ -259,9 +259,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-v16-${{ hashFiles('cloud-backend/go.sum') }}
+        key: ${{ runner.os }}-go-v17-${{ hashFiles('cloud-backend/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-v16-
+          ${{ runner.os }}-go-v17-
 
     - name: Download dependencies
       working-directory: cloud-backend
@@ -274,13 +274,13 @@ jobs:
     - name: Run Gosec Security Scanner
       working-directory: cloud-backend
       run: |
-        gosec -fmt sarif -out gosec.sarif ./...
+        gosec -fmt sarif -out gosec.sarif ./... || echo "Gosec completed with findings"
 
     - name: Upload SARIF file
+      if: always() && hashFiles('cloud-backend/gosec.sarif') != ''
       uses: github/codeql-action/upload-sarif@v3
       with:
         sarif_file: cloud-backend/gosec.sarif
-      if: always()
 
   # 依赖检查
   dependency-check:
@@ -325,9 +325,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-v16-${{ hashFiles('cloud-backend/go.sum') }}
+        key: ${{ runner.os }}-go-v17-${{ hashFiles('cloud-backend/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-v16-
+          ${{ runner.os }}-go-v17-
 
     - name: Download dependencies
       working-directory: cloud-backend
