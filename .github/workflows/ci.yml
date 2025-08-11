@@ -32,9 +32,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-v22-${{ hashFiles('cloud-backend/go.sum') }}
+        key: ${{ runner.os }}-go-v23-${{ hashFiles('cloud-backend/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-v22-
+          ${{ runner.os }}-go-v23-
 
     - name: Download dependencies
       working-directory: cloud-backend
@@ -78,9 +78,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-v22-${{ hashFiles('cloud-backend/go.sum') }}
+        key: ${{ runner.os }}-go-v23-${{ hashFiles('cloud-backend/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-v22-
+          ${{ runner.os }}-go-v23-
 
     - name: Download dependencies
       working-directory: cloud-backend
@@ -145,7 +145,7 @@ jobs:
       redis:
         image: redis:7-alpine
         options: >-
-          --health-cmd="redis-cli ping"
+          --health-cmd="nc -z localhost 6379"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=3
@@ -165,9 +165,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-v22-${{ hashFiles('cloud-backend/go.sum') }}
+        key: ${{ runner.os }}-go-v23-${{ hashFiles('cloud-backend/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-v22-
+          ${{ runner.os }}-go-v23-
 
     - name: Download dependencies
       working-directory: cloud-backend
@@ -180,7 +180,7 @@ jobs:
         echo "Waiting for MongoDB..."
         timeout 60 bash -c 'until nc -z 127.0.0.1 27017; do sleep 2; done'
         echo "Waiting for Redis..."
-        timeout 60 bash -c 'until redis-cli -h 127.0.0.1 -p 6379 ping; do sleep 1; done'
+        timeout 60 bash -c 'until nc -z 127.0.0.1 6379; do sleep 1; done'
         echo "All services are ready!"
 
     - name: Run integration tests
@@ -217,9 +217,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-v22-${{ hashFiles('cloud-backend/go.sum') }}
+        key: ${{ runner.os }}-go-v23-${{ hashFiles('cloud-backend/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-v22-
+          ${{ runner.os }}-go-v23-
 
     - name: Download dependencies
       working-directory: cloud-backend
@@ -267,9 +267,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-v22-${{ hashFiles('cloud-backend/go.sum') }}
+        key: ${{ runner.os }}-go-v23-${{ hashFiles('cloud-backend/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-v22-
+          ${{ runner.os }}-go-v23-
 
     - name: Download dependencies
       working-directory: cloud-backend
@@ -333,9 +333,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-v22-${{ hashFiles('cloud-backend/go.sum') }}
+        key: ${{ runner.os }}-go-v23-${{ hashFiles('cloud-backend/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-v22-
+          ${{ runner.os }}-go-v23-
 
     - name: Download dependencies
       working-directory: cloud-backend
