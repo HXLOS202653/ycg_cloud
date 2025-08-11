@@ -87,7 +87,7 @@ func TestHealthEndpointsIntegration(t *testing.T) {
 	// 关闭服务器
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	
+
 	if err := server.Shutdown(ctx); err != nil {
 		t.Logf("Server shutdown error: %v", err)
 	}
@@ -111,7 +111,7 @@ func TestDatabaseConnectionsIntegration(t *testing.T) {
 	// 测试数据库健康检查
 	t.Run("Database Health Check", func(t *testing.T) {
 		health := dbManager.HealthCheck()
-		
+
 		// 至少应该有一个数据库连接是健康的
 		assert.True(t, health["mysql"].(bool) || health["mongodb"].(bool) || health["redis"].(bool),
 			"At least one database should be healthy")
@@ -120,10 +120,10 @@ func TestDatabaseConnectionsIntegration(t *testing.T) {
 	// 测试连接统计
 	t.Run("Connection Stats", func(t *testing.T) {
 		stats := dbManager.GetConnectionStats()
-		
+
 		// 验证统计信息结构
 		assert.Contains(t, stats, "mysql")
-		assert.Contains(t, stats, "mongodb") 
+		assert.Contains(t, stats, "mongodb")
 		assert.Contains(t, stats, "redis")
 	})
 }
