@@ -18,7 +18,7 @@ run:
 output:
   # Colored output format
   formats:
-    - format: colored-line-number
+    colored-line-number: stdout
   
   # Print lines of code with issue.
   print-issued-lines: true
