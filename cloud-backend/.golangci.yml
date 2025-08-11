@@ -50,7 +50,7 @@ linters:
     - govet           # Reports suspicious constructs
     - ineffassign     # Detect ineffectual assignments
     - staticcheck     # Advanced Go linter
-    - typecheck       # Parse and type-check Go code
+    # typecheck is now built-in and cannot be enabled/disabled in v2.x
     - unused          # Check for unused constants, variables, functions and types
     
     # Code style linters
