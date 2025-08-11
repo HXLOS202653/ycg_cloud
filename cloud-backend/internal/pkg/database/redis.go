@@ -7,7 +7,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 
 	"github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/config"
 )
@@ -66,9 +66,9 @@ func buildRedisOptions(cfg *config.RedisConfig) *redis.Options {
 	}
 
 	if cfg.MaxConnAge > 0 {
-		options.MaxConnAge = cfg.MaxConnAge
+		options.ConnMaxLifetime = cfg.MaxConnAge
 	} else {
-		options.MaxConnAge = time.Hour // Default
+		options.ConnMaxLifetime = time.Hour // Default
 	}
 
 	if cfg.PoolTimeout > 0 {
@@ -78,16 +78,13 @@ func buildRedisOptions(cfg *config.RedisConfig) *redis.Options {
 	}
 
 	if cfg.IdleTimeout > 0 {
-		options.IdleTimeout = cfg.IdleTimeout
+		options.ConnMaxIdleTime = cfg.IdleTimeout
 	} else {
-		options.IdleTimeout = 5 * time.Minute // Default
+		options.ConnMaxIdleTime = 5 * time.Minute // Default
 	}
 
-	if cfg.IdleCheckFreq > 0 {
-		options.IdleCheckFrequency = cfg.IdleCheckFreq
-	} else {
-		options.IdleCheckFrequency = time.Minute // Default
-	}
+	// Note: IdleCheckFrequency was removed in go-redis v9
+	// The library now handles idle connection checks automatically
 
 	// Set timeout options
 	if cfg.DialTimeout > 0 {
@@ -108,8 +105,8 @@ func buildRedisOptions(cfg *config.RedisConfig) *redis.Options {
 		options.WriteTimeout = 3 * time.Second // Default
 	}
 
-	log.Printf("Redis connection pool configured: PoolSize=%d, MinIdle=%d, MaxConnAge=%v",
-		options.PoolSize, options.MinIdleConns, options.MaxConnAge)
+	log.Printf("Redis connection pool configured: PoolSize=%d, MinIdle=%d, ConnMaxLifetime=%v",
+		options.PoolSize, options.MinIdleConns, options.ConnMaxLifetime)
 
 	return options
 }
