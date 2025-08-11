@@ -1,6 +1,8 @@
 package config
 
 import (
+	"fmt"
+	"log"
 	"os"
 	"testing"
 	"time"
@@ -11,15 +13,23 @@ import (
 
 func TestMain(m *testing.M) {
 	// Setup test environment
-	os.Setenv("APP_ENV", "test")
-	os.Setenv("APP_DEBUG", "true")
+	if err := os.Setenv("APP_ENV", "test"); err != nil {
+		panic(fmt.Sprintf("Failed to set APP_ENV: %v", err))
+	}
+	if err := os.Setenv("APP_DEBUG", "true"); err != nil {
+		panic(fmt.Sprintf("Failed to set APP_DEBUG: %v", err))
+	}
 
 	// Run tests
 	code := m.Run()
 
 	// Cleanup
-	os.Unsetenv("APP_ENV")
-	os.Unsetenv("APP_DEBUG")
+	if err := os.Unsetenv("APP_ENV"); err != nil {
+		log.Printf("Failed to unset APP_ENV: %v", err)
+	}
+	if err := os.Unsetenv("APP_DEBUG"); err != nil {
+		log.Printf("Failed to unset APP_DEBUG: %v", err)
+	}
 
 	// Exit with test result code
 	os.Exit(code)
@@ -30,13 +40,19 @@ func TestLoadConfig_DefaultValues(t *testing.T) {
 	originalEnv := os.Getenv("APP_ENV")
 	defer func() {
 		if originalEnv != "" {
-			os.Setenv("APP_ENV", originalEnv)
+			if err := os.Setenv("APP_ENV", originalEnv); err != nil {
+				t.Logf("Failed to restore APP_ENV: %v", err)
+			}
 		} else {
-			os.Unsetenv("APP_ENV")
+			if err := os.Unsetenv("APP_ENV"); err != nil {
+				t.Logf("Failed to unset APP_ENV: %v", err)
+			}
 		}
 	}()
 
-	os.Setenv("APP_ENV", "test")
+	if err := os.Setenv("APP_ENV", "test"); err != nil {
+		t.Fatalf("Failed to set APP_ENV: %v", err)
+	}
 
 	// Execute
 	cfg, err := LoadConfig()

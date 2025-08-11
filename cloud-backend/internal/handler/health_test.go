@@ -130,7 +130,8 @@ func TestHealthHandler_Health_WithoutDB(t *testing.T) {
 	assert.Equal(t, cfg.App.Environment, response.Environment)
 	assert.Contains(t, response.Services, "database")
 
-	dbService := response.Services["database"].(map[string]interface{})
+	dbService, ok := response.Services["database"].(map[string]interface{})
+	require.True(t, ok, "database service should be a map[string]interface{}")
 	assert.Equal(t, "unhealthy", dbService["status"])
 }
 

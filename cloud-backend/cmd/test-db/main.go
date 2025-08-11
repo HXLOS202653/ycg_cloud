@@ -27,7 +27,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to initialize database manager: %v", err)
 	}
-	defer dbManager.Close()
+	defer func() {
+		if err := dbManager.Close(); err != nil {
+			log.Printf("Failed to close database connections: %v", err)
+		}
+	}()
 
 	// Perform health checks
 	if err := dbManager.HealthCheck(); err != nil {
