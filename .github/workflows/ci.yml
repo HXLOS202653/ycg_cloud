@@ -27,17 +27,20 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        key: ${{ runner.os }}-go-${{ hashFiles('cloud-backend/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-
 
     - name: Download dependencies
+      working-directory: cloud-backend
       run: go mod download
 
     - name: Verify dependencies
+      working-directory: cloud-backend
       run: go mod verify
 
     - name: Check code formatting
+      working-directory: cloud-backend
       run: |
         if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
           echo "Code is not properly formatted:"
@@ -50,6 +53,7 @@ jobs:
         curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.54.2
 
     - name: Run golangci-lint
+      working-directory: cloud-backend
       run: golangci-lint run --config .golangci.yml
 
   # 单元测试
@@ -69,18 +73,21 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        key: ${{ runner.os }}-go-${{ hashFiles('cloud-backend/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-
 
     - name: Download dependencies
+      working-directory: cloud-backend
       run: go mod download
 
     - name: Run unit tests
+      working-directory: cloud-backend
       run: |
         APP_ENV=test go test -short -v -race -coverprofile=coverage.out -covermode=atomic ./...
 
     - name: Generate coverage report
+      working-directory: cloud-backend
       run: |
         go tool cover -func=coverage.out | grep total | awk '{print "Total coverage: " $3}'
         go tool cover -html=coverage.out -o coverage.html
@@ -88,7 +95,7 @@ jobs:
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
       with:
-        file: ./coverage.out
+        file: ./cloud-backend/coverage.out
         flags: unittests
         name: codecov-umbrella
 
@@ -97,8 +104,8 @@ jobs:
       with:
         name: coverage-report
         path: |
-          coverage.out
-          coverage.html
+          cloud-backend/coverage.out
+          cloud-backend/coverage.html
 
   # 集成测试
   integration-tests:
@@ -155,11 +162,12 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        key: ${{ runner.os }}-go-${{ hashFiles('cloud-backend/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-
 
     - name: Download dependencies
+      working-directory: cloud-backend
       run: go mod download
 
     - name: Wait for services
@@ -172,6 +180,7 @@ jobs:
         timeout 60 bash -c 'until redis-cli -h 127.0.0.1 -p 6379 ping; do sleep 1; done'
 
     - name: Run integration tests
+      working-directory: cloud-backend
       env:
         APP_ENV: test
         MYSQL_HOST: 127.0.0.1
@@ -204,22 +213,26 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        key: ${{ runner.os }}-go-${{ hashFiles('cloud-backend/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-
 
     - name: Download dependencies
+      working-directory: cloud-backend
       run: go mod download
 
     - name: Build for Linux
+      working-directory: cloud-backend
       run: |
         GOOS=linux GOARCH=amd64 go build -o bin/server-linux cmd/server/main.go
 
     - name: Build for Windows
+      working-directory: cloud-backend
       run: |
         GOOS=windows GOARCH=amd64 go build -o bin/server.exe cmd/server/main.go
 
     - name: Build for macOS
+      working-directory: cloud-backend
       run: |
         GOOS=darwin GOARCH=amd64 go build -o bin/server-darwin cmd/server/main.go
 
@@ -227,7 +240,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: build-artifacts
-        path: bin/
+        path: cloud-backend/bin/
 
   # 安全扫描
   security:
@@ -246,11 +259,12 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        key: ${{ runner.os }}-go-${{ hashFiles('cloud-backend/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-
 
     - name: Download dependencies
+      working-directory: cloud-backend
       run: go mod download
 
     - name: Install Gosec
@@ -258,13 +272,14 @@ jobs:
         go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
 
     - name: Run Gosec Security Scanner
+      working-directory: cloud-backend
       run: |
         gosec -fmt sarif -out gosec.sarif ./...
 
     - name: Upload SARIF file
       uses: github/codeql-action/upload-sarif@v3
       with:
-        sarif_file: gosec.sarif
+        sarif_file: cloud-backend/gosec.sarif
       if: always()
 
   # 依赖检查
@@ -281,11 +296,13 @@ jobs:
         go-version: ${{ env.GO_VERSION }}
 
     - name: Check for vulnerabilities
+      working-directory: cloud-backend
       run: |
         go install golang.org/x/vuln/cmd/govulncheck@latest
         govulncheck ./...
 
     - name: Check dependencies licenses
+      working-directory: cloud-backend
       run: |
         go mod download
         go list -m all | head -20
@@ -308,14 +325,16 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        key: ${{ runner.os }}-go-${{ hashFiles('cloud-backend/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-
 
     - name: Download dependencies
+      working-directory: cloud-backend
       run: go mod download
 
     - name: Run benchmark tests
+      working-directory: cloud-backend
       run: |
         APP_ENV=test go test -bench=. -benchmem ./... | tee benchmark.txt
 
@@ -323,4 +342,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: benchmark-results
-        path: benchmark.txt
+        path: cloud-backend/benchmark.txt
