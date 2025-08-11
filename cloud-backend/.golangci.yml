@@ -1,6 +1,9 @@
 # golangci-lint configuration for YCG Cloud Storage project
 # This config follows Go best practices and project standards
 
+# Configuration version (required for golangci-lint v2.x)
+version: 2
+
 run:
   # Timeout for analysis, e.g. 30s, 5m.
   timeout: 5m
