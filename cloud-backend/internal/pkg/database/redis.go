@@ -7,7 +7,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/redis/go-redis/v9"
+	redis "github.com/redis/go-redis/v9"
 
 	"github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/config"
 )
