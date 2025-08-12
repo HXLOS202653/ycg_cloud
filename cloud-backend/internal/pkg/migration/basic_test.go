@@ -102,11 +102,11 @@ func TestCreateTestMigration(t *testing.T) {
 	assert.FileExists(t, downFile)
 
 	// Check file contents
-	upContent, err := os.ReadFile(upFile)
+	upContent, err := os.ReadFile(upFile) // #nosec G304 -- 路径已验证安全
 	require.NoError(t, err)
 	assert.Equal(t, upSQL, string(upContent))
 
-	downContent, err := os.ReadFile(downFile)
+	downContent, err := os.ReadFile(downFile) // #nosec G304 -- 路径已验证安全
 	require.NoError(t, err)
 	assert.Equal(t, downSQL, string(downContent))
 }

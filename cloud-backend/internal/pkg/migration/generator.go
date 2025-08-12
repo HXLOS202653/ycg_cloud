@@ -87,7 +87,7 @@ func (g *Generator) GenerateMongoDBMigration(name, description string) error {
 	// 生成JavaScript迁移文件
 	jsFile := filepath.Join(g.migrationsDir, "mongodb", fmt.Sprintf("%s_%s.js", version, name))
 	if err := g.generateFromTemplate("mongodb.tmpl", jsFile, data); err != nil {
-		return fmt.Errorf("生成MongoDB迁移文件失败: %v", err)
+		return fmt.Errorf("生成MongoDB迁移文件失败: %w", err)
 	}
 
 	fmt.Printf("✅ 成功生成MongoDB迁移文件:\n")
@@ -127,13 +127,13 @@ func (g *Generator) generateFromTemplate(templateName, outputFile string, data i
 	// 读取模板文件
 	templateContent, err := g.getTemplateContent(templateName)
 	if err != nil {
-		return fmt.Errorf("读取模板失败: %v", err)
+		return fmt.Errorf("读取模板失败: %w", err)
 	}
 
 	// 解析模板
 	tmpl, err := template.New(templateName).Parse(templateContent)
 	if err != nil {
-		return fmt.Errorf("解析模板失败: %v", err)
+		return fmt.Errorf("解析模板失败: %w", err)
 	}
 
 	// 创建输出文件 #nosec G304 -- 路径已验证
@@ -354,7 +354,7 @@ func (g *Generator) CreateTemplateDir() error {
 
 	// 创建模板目录
 	if err := os.MkdirAll(templateDir, 0o750); err != nil {
-		return fmt.Errorf("创建模板目录失败: %v", err)
+		return fmt.Errorf("创建模板目录失败: %w", err)
 	}
 
 	// 创建默认模板文件
@@ -373,7 +373,7 @@ func (g *Generator) CreateTemplateDir() error {
 		}
 
 		if err := os.WriteFile(filePath, []byte(content), 0o600); err != nil {
-			return fmt.Errorf("创建模板文件 %s 失败: %v", filename, err)
+			return fmt.Errorf("创建模板文件 %s 失败: %w", filename, err)
 		}
 
 		fmt.Printf("✅ 创建模板文件: %s\n", filePath)

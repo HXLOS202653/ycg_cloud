@@ -254,7 +254,7 @@ func ExampleTransactionMonitoring(manager *MySQLManager) {
 	// Perform some transactions to generate metrics
 	ctx := context.Background()
 	for i := 0; i < 10; i++ {
-		err := manager.ExecuteWithTransaction(ctx, func(tx *gorm.DB) error {
+		err := manager.ExecuteWithTransaction(ctx, func(_ *gorm.DB) error {
 			// Simulate work
 			time.Sleep(time.Duration(i*10) * time.Millisecond)
 

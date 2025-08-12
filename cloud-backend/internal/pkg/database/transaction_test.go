@@ -352,7 +352,7 @@ func TestTransactionManager_WithTransactionMonitoring(t *testing.T) {
 	ctx := context.Background()
 
 	// Successful transaction
-	err := tm.WithTransactionMonitoring(ctx, monitor, func(tx *gorm.DB) error {
+	err := tm.WithTransactionMonitoring(ctx, monitor, func(_ *gorm.DB) error {
 		time.Sleep(10 * time.Millisecond)
 		return nil
 	})
@@ -363,7 +363,7 @@ func TestTransactionManager_WithTransactionMonitoring(t *testing.T) {
 	assert.True(t, stats.AverageLatency > 0)
 
 	// Failed transaction
-	err = tm.WithTransactionMonitoring(ctx, monitor, func(tx *gorm.DB) error {
+	err = tm.WithTransactionMonitoring(ctx, monitor, func(_ *gorm.DB) error {
 		return errors.New("test error")
 	})
 

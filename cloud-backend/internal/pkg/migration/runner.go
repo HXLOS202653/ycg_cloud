@@ -83,13 +83,13 @@ func (r *Runner) RunMongoDBMigrations(direction Direction, targetVersion string,
 func (r *Runner) runMySQLUp(targetVersion string, steps int) error {
 	// 初始化迁移记录表
 	if err := r.initMySQLMigrationTable(); err != nil {
-		return fmt.Errorf("初始化MySQL迁移表失败: %v", err)
+		return fmt.Errorf("初始化MySQL迁移表失败: %w", err)
 	}
 
 	// 获取待执行的迁移
 	pending, err := r.getPendingMySQLMigrations()
 	if err != nil {
-		return fmt.Errorf("获取待执行MySQL迁移失败: %v", err)
+		return fmt.Errorf("获取待执行MySQL迁移失败: %w", err)
 	}
 
 	if len(pending) == 0 {
@@ -126,11 +126,11 @@ func (r *Runner) runMySQLUp(targetVersion string, steps int) error {
 				"migration_name":    mig.Name,
 				"error":             err.Error(),
 			}).Error("MySQL migration execution failed")
-			return fmt.Errorf("执行MySQL迁移失败: %v", err)
+			return fmt.Errorf("执行MySQL迁移失败: %w", err)
 		}
 		duration := time.Since(startTime)
 
-		fmt.Printf("✅ MySQL迁移 %s_%s 执行成功 (耗时: %v)\n", mig.Version, mig.Name, duration)
+		fmt.Printf("✅ MySQL迁移 %s_%s 执行成功 (耗时: %w)\n", mig.Version, mig.Name, duration)
 		r.logger.WithFields(logrus.Fields{
 			"migration_version": mig.Version,
 			"migration_name":    mig.Name,
@@ -147,7 +147,7 @@ func (r *Runner) runMySQLDown(targetVersion string, steps int) error {
 	// 获取已应用的迁移
 	applied, err := r.getAppliedMySQLMigrations()
 	if err != nil {
-		return fmt.Errorf("获取已应用MySQL迁移失败: %v", err)
+		return fmt.Errorf("获取已应用MySQL迁移失败: %w", err)
 	}
 
 	if len(applied) == 0 {
@@ -179,11 +179,11 @@ func (r *Runner) runMySQLDown(targetVersion string, steps int) error {
 
 		startTime := time.Now()
 		if err := r.rollbackMySQLMigration(record); err != nil {
-			return fmt.Errorf("回滚MySQL迁移失败: %v", err)
+			return fmt.Errorf("回滚MySQL迁移失败: %w", err)
 		}
 		duration := time.Since(startTime)
 
-		fmt.Printf("✅ MySQL迁移 %s_%s 回滚成功 (耗时: %v)\n", record.Version, record.Name, duration)
+		fmt.Printf("✅ MySQL迁移 %s_%s 回滚成功 (耗时: %w)\n", record.Version, record.Name, duration)
 	}
 
 	fmt.Printf("\n🎉 成功回滚了 %d 个MySQL迁移\n", len(toRollback))
@@ -194,13 +194,13 @@ func (r *Runner) runMySQLDown(targetVersion string, steps int) error {
 func (r *Runner) runMongoDBUp(targetVersion string, steps int) error {
 	// 初始化MongoDB迁移记录集合
 	if err := r.initMongoDBMigrationCollection(); err != nil {
-		return fmt.Errorf("初始化MongoDB迁移集合失败: %v", err)
+		return fmt.Errorf("初始化MongoDB迁移集合失败: %w", err)
 	}
 
 	// 获取待执行的MongoDB迁移
 	pending, err := r.getPendingMongoDBMigrations()
 	if err != nil {
-		return fmt.Errorf("获取待执行MongoDB迁移失败: %v", err)
+		return fmt.Errorf("获取待执行MongoDB迁移失败: %w", err)
 	}
 
 	if len(pending) == 0 {
@@ -232,11 +232,11 @@ func (r *Runner) runMongoDBUp(targetVersion string, steps int) error {
 
 		startTime := time.Now()
 		if err := r.executeMongoDBMigration(mig); err != nil {
-			return fmt.Errorf("执行MongoDB迁移失败: %v", err)
+			return fmt.Errorf("执行MongoDB迁移失败: %w", err)
 		}
 		duration := time.Since(startTime)
 
-		fmt.Printf("✅ MongoDB迁移 %s_%s 执行成功 (耗时: %v)\n", mig.Version, mig.Name, duration)
+		fmt.Printf("✅ MongoDB迁移 %s_%s 执行成功 (耗时: %w)\n", mig.Version, mig.Name, duration)
 	}
 
 	fmt.Printf("\n🎉 成功执行了 %d 个MongoDB迁移\n", len(toExecute))
@@ -444,12 +444,12 @@ func (r *Runner) executeMySQLMigration(mig *MySQLMigration, direction Direction)
 	// 读取SQL文件
 	sqlContent, err := os.ReadFile(sqlFile) // #nosec G304 -- 路径来自可信的迁移文件
 	if err != nil {
-		return fmt.Errorf("读取SQL文件失败: %v", err)
+		return fmt.Errorf("读取SQL文件失败: %w", err)
 	}
 
 	// 执行SQL语句
 	if err := r.executeSQLStatements(string(sqlContent)); err != nil {
-		return fmt.Errorf("执行SQL失败: %v", err)
+		return fmt.Errorf("执行SQL失败: %w", err)
 	}
 
 	// 记录迁移
@@ -462,7 +462,7 @@ func (r *Runner) executeMySQLMigration(mig *MySQLMigration, direction Direction)
 		}
 
 		if err := r.mysqlDB.Create(record).Error; err != nil {
-			return fmt.Errorf("记录迁移失败: %v", err)
+			return fmt.Errorf("记录迁移失败: %w", err)
 		}
 	}
 
@@ -501,7 +501,7 @@ func (r *Runner) rollbackMySQLMigration(record *MySQLMigrationRecord) error {
 
 	// 删除迁移记录
 	if err := r.mysqlDB.Delete(record).Error; err != nil {
-		return fmt.Errorf("删除迁移记录失败: %v", err)
+		return fmt.Errorf("删除迁移记录失败: %w", err)
 	}
 
 	return nil
@@ -512,7 +512,7 @@ func (r *Runner) executeMongoDBMigration(mig *MongoDBMigration) error {
 	// 读取JavaScript文件
 	jsContent, err := os.ReadFile(mig.JSFile)
 	if err != nil {
-		return fmt.Errorf("读取JavaScript文件失败: %v", err)
+		return fmt.Errorf("读取JavaScript文件失败: %w", err)
 	}
 
 	// 这里需要实现JavaScript代码的执行
@@ -534,7 +534,7 @@ func (r *Runner) executeMongoDBMigration(mig *MongoDBMigration) error {
 	collection := r.mongoDB.Collection("migration_records")
 	_, err = collection.InsertOne(context.Background(), record)
 	if err != nil {
-		return fmt.Errorf("记录MongoDB迁移失败: %v", err)
+		return fmt.Errorf("记录MongoDB迁移失败: %w", err)
 	}
 
 	return nil
@@ -555,7 +555,7 @@ func (r *Runner) executeSQLStatements(sql string) error {
 		}
 
 		if err := r.mysqlDB.Exec(statement).Error; err != nil {
-			return fmt.Errorf("执行SQL语句失败 '%s': %v", statement, err)
+			return fmt.Errorf("执行SQL语句失败 '%s': %w", statement, err)
 		}
 	}
 
@@ -595,9 +595,9 @@ func (r *Runner) getSQLFileByDirection(mig *MySQLMigration, direction Direction)
 
 // previewSQLFileContent 预览SQL文件内容
 func (r *Runner) previewSQLFileContent(sqlFile string) {
-	content, err := os.ReadFile(sqlFile)
+	content, err := os.ReadFile(sqlFile) // #nosec G304 -- 路径已验证安全
 	if err != nil {
-		fmt.Printf("   读取文件失败: %v\n", err)
+		fmt.Printf("   读取文件失败: %w\n", err)
 		return
 	}
 

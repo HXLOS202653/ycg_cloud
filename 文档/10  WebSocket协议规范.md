@@ -1723,7 +1723,7 @@ func (h *Hub) Run() {
 func (h *Hub) ServeWS(w http.ResponseWriter, r *http.Request) {
     conn, err := upgrader.Upgrade(w, r, nil)
     if err != nil {
-        log.Printf("WebSocket升级失败: %v", err)
+        log.Printf("WebSocket升级失败: %w", err)
         return
     }
 
@@ -1757,14 +1757,14 @@ func (c *Client) readPump() {
         _, messageData, err := c.conn.ReadMessage()
         if err != nil {
             if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-                log.Printf("WebSocket错误: %v", err)
+                log.Printf("WebSocket错误: %w", err)
             }
             break
         }
 
         var msg Message
         if err := json.Unmarshal(messageData, &msg); err != nil {
-            log.Printf("消息解析失败: %v", err)
+            log.Printf("消息解析失败: %w", err)
             continue
         }
 
@@ -1876,7 +1876,7 @@ func (c *Client) handlePing(msg *Message) {
 func (c *Client) sendMessage(msg *Message) {
     data, err := json.Marshal(msg)
     if err != nil {
-        log.Printf("消息序列化失败: %v", err)
+        log.Printf("消息序列化失败: %w", err)
         return
     }
 
@@ -1998,7 +1998,7 @@ func (fs *FileSyncService) broadcastToAuthorizedUsers(event *FileEvent, fileID s
 
     data, err := json.Marshal(message)
     if err != nil {
-        log.Printf("文件事件序列化失败: %v", err)
+        log.Printf("文件事件序列化失败: %w", err)
         return
     }
 

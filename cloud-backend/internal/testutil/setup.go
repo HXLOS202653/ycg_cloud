@@ -191,20 +191,20 @@ func GetTestConfig() *TestConfigData {
 // SetupTestEnvironment sets up environment variables for testing.
 func SetupTestEnvironment() {
 	if err := os.Setenv("APP_ENV", "test"); err != nil {
-		log.Printf("Failed to set APP_ENV: %v", err)
+		log.Printf("Failed to set APP_ENV: %w", err)
 	}
 	if err := os.Setenv("APP_DEBUG", "true"); err != nil {
-		log.Printf("Failed to set APP_DEBUG: %v", err)
+		log.Printf("Failed to set APP_DEBUG: %w", err)
 	}
 }
 
 // CleanupTestEnvironment cleans up environment variables after testing.
 func CleanupTestEnvironment() {
 	if err := os.Unsetenv("APP_ENV"); err != nil {
-		log.Printf("Failed to unset APP_ENV: %v", err)
+		log.Printf("Failed to unset APP_ENV: %w", err)
 	}
 	if err := os.Unsetenv("APP_DEBUG"); err != nil {
-		log.Printf("Failed to unset APP_DEBUG: %v", err)
+		log.Printf("Failed to unset APP_DEBUG: %w", err)
 	}
 }
 

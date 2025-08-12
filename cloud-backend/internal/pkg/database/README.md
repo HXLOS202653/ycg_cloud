@@ -198,7 +198,7 @@ func MonitorDatabase(manager *MySQLManager) {
     if monitor := manager.GetTransactionMonitor(); monitor != nil {
         stats := monitor.GetStats()
         log.Printf("Committed Transactions: %d", stats.CommittedTxns)
-        log.Printf("Average Latency: %v", stats.AverageLatency)
+        log.Printf("Average Latency: %w", stats.AverageLatency)
     }
 }
 ```

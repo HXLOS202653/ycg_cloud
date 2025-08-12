@@ -162,7 +162,7 @@ func TestConnectionPool_ExecuteWithContext(t *testing.T) {
 		cancel()
 	}()
 
-	err = pool.ExecuteWithContext(ctx, func(db *gorm.DB) error {
+	err = pool.ExecuteWithContext(ctx, func(_ *gorm.DB) error {
 		time.Sleep(200 * time.Millisecond)
 		return nil
 	})
@@ -217,7 +217,7 @@ func TestConnectionPool_RetryLogic(t *testing.T) {
 	defer func() { _ = pool.Close() }()
 
 	attempts := 0
-	err = pool.ExecuteWithRetry(func(db *gorm.DB) error {
+	err = pool.ExecuteWithRetry(func(_ *gorm.DB) error {
 		attempts++
 		if attempts < 3 {
 			return assert.AnError // Simulate failure
@@ -277,7 +277,7 @@ func BenchmarkConnectionPool_ExecuteWithMetrics(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			_ = pool.ExecuteWithMetrics(func(db *gorm.DB) error {
+			_ = pool.ExecuteWithMetrics(func(_ *gorm.DB) error {
 				// Simulate lightweight operation
 				return nil
 			})

@@ -28,7 +28,7 @@ func TestHealthEndpointsIntegration(t *testing.T) {
 	require.NoError(t, err)
 	defer func() {
 		if err := dbManager.Close(); err != nil {
-			t.Logf("Failed to close database connections: %v", err)
+			t.Logf("Failed to close database connections: %w", err)
 		}
 	}()
 
@@ -41,7 +41,7 @@ func TestHealthEndpointsIntegration(t *testing.T) {
 	// 启动服务器
 	go func() {
 		if err := server.Start(); err != nil && err != http.ErrServerClosed {
-			t.Logf("Server start error: %v", err)
+			t.Logf("Server start error: %w", err)
 		}
 	}()
 
@@ -89,7 +89,7 @@ func TestHealthEndpointsIntegration(t *testing.T) {
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
-		t.Logf("Server shutdown error: %v", err)
+		t.Logf("Server shutdown error: %w", err)
 	}
 }
 
@@ -104,7 +104,7 @@ func TestDatabaseConnectionsIntegration(t *testing.T) {
 	require.NoError(t, err)
 	defer func() {
 		if err := dbManager.Close(); err != nil {
-			t.Logf("Failed to close database connections: %v", err)
+			t.Logf("Failed to close database connections: %w", err)
 		}
 	}()
 

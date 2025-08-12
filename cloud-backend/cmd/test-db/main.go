@@ -14,7 +14,7 @@ func main() {
 	// Load configuration
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		log.Fatalf("Failed to load configuration: %v", err)
+		log.Fatalf("Failed to load configuration: %w", err)
 	}
 
 	log.Printf("Loaded configuration for environment: %s", cfg.App.Environment)
@@ -25,17 +25,17 @@ func main() {
 	// Initialize database manager
 	dbManager, err := database.NewManager(&cfg.Database)
 	if err != nil {
-		log.Fatalf("Failed to initialize database manager: %v", err)
+		log.Fatalf("Failed to initialize database manager: %w", err)
 	}
 	defer func() {
 		if err := dbManager.Close(); err != nil {
-			log.Printf("Failed to close database connections: %v", err)
+			log.Printf("Failed to close database connections: %w", err)
 		}
 	}()
 
 	// Perform health checks
 	if err := dbManager.HealthCheck(); err != nil {
-		log.Printf("Database health check failed: %v", err)
+		log.Printf("Database health check failed: %w", err)
 		// Let defer dbManager.Close() run naturally
 		return
 	}

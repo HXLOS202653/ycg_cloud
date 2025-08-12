@@ -1412,7 +1412,7 @@ func (dm *Manager) Close() error <span class="cov8" title="1">{
         }
 
         <span class="cov8" title="1">if len(errors) &gt; 0 </span><span class="cov0" title="0">{
-                return fmt.Errorf("database close errors: %v", errors)
+                return fmt.Errorf("database close errors: %w", errors)
         }</span>
 
         <span class="cov8" title="1">log.Println("All database connections closed successfully")
@@ -1816,7 +1816,7 @@ func configureConnectionPool(sqlDB *sql.DB, cfg *config.MySQLConfig) <span class
                 sqlDB.SetConnMaxIdleTime(10 * time.Minute) // Default 10 minutes
         }</span>
 
-        <span class="cov0" title="0">log.Printf("MySQL connection pool configured: MaxOpen=%d, MaxIdle=%d, MaxLifetime=%v, MaxIdleTime=%v",
+        <span class="cov0" title="0">log.Printf("MySQL connection pool configured: MaxOpen=%d, MaxIdle=%d, MaxLifetime=%w, MaxIdleTime=%w",
                 cfg.MaxOpenConns, cfg.MaxIdleConns, cfg.ConnMaxLifetime, cfg.ConnMaxIdleTime)</span>
 }
 
@@ -1976,7 +1976,7 @@ func buildRedisOptions(cfg *config.RedisConfig) *redis.Options <span class="cov0
                 options.WriteTimeout = 3 * time.Second // Default
         }</span>
 
-        <span class="cov0" title="0">log.Printf("Redis connection pool configured: PoolSize=%d, MinIdle=%d, MaxConnAge=%v",
+        <span class="cov0" title="0">log.Printf("Redis connection pool configured: PoolSize=%d, MinIdle=%d, MaxConnAge=%w",
                 options.PoolSize, options.MinIdleConns, options.MaxConnAge)
 
         return options</span>

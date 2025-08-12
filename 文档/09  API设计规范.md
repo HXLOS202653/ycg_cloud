@@ -2921,7 +2921,7 @@ func main() {
     // 获取文件信息
     file, err := getFileInfo(client, "file_abc123def456")
     if err != nil {
-        fmt.Printf("获取文件失败: %v\n", err)
+        fmt.Printf("获取文件失败: %w\n", err)
         return
     }
     
