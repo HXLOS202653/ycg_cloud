@@ -76,6 +76,7 @@ func (s *VerificationService) VerifyCode(email, code, purpose string) error {
 		// Delete the code to prevent further attempts
 		if err := s.deleteVerificationCode(email, purpose); err != nil {
 			// Log deletion error but continue
+			fmt.Printf("Failed to delete verification code after max attempts: %v\n", err)
 		}
 		return fmt.Errorf("maximum verification attempts exceeded")
 	}

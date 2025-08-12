@@ -122,6 +122,7 @@ func (s *TwoFactorService) Enable2FA(userID int64, totpCode string) error {
 	// Clean up setup data
 	if err := s.redisManager.Del(ctx, setupKey); err != nil {
 		// Log error but don't fail the operation
+		fmt.Printf("Failed to delete 2FA setup data: %v\n", err)
 	}
 
 	return nil
@@ -163,6 +164,7 @@ func (s *TwoFactorService) Disable2FA(userID int64, _ /* password */, totpCode s
 	backupKey := fmt.Sprintf("backup_codes:%d", userID)
 	if err := s.redisManager.Del(ctx, backupKey); err != nil {
 		// Log error but don't fail the operation
+		fmt.Printf("Failed to delete backup codes: %v\n", err)
 	}
 
 	return nil
