@@ -8,10 +8,11 @@ import (
 	"fmt"
 	"time"
 
+	"gorm.io/gorm"
+
 	"github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/config"
 	"github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/model"
 	"github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/pkg/database"
-	"gorm.io/gorm"
 )
 
 // SessionService handles user session operations
@@ -94,6 +95,7 @@ func (s *SessionService) GetActiveSession(userID int64, sessionToken string) (*m
 	// Update cache
 	if err := s.storeSessionInCache(&session); err != nil {
 		// Log cache error but don't fail session creation
+		fmt.Printf("Failed to cache session: %v\n", err)
 	}
 
 	return &session, nil

@@ -7,9 +7,10 @@ import (
 	"strings"
 	"time"
 
+	"gorm.io/gorm"
+
 	"github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/model"
 	"github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/pkg/database"
-	"gorm.io/gorm"
 )
 
 // TwoFactorService handles two-factor authentication operations
@@ -119,7 +120,9 @@ func (s *TwoFactorService) Enable2FA(userID int64, totpCode string) error {
 	}
 
 	// Clean up setup data
-	s.redisManager.Del(ctx, setupKey)
+	if err := s.redisManager.Del(ctx, setupKey); err != nil {
+		// Log error but don't fail the operation
+	}
 
 	return nil
 }
@@ -158,7 +161,9 @@ func (s *TwoFactorService) Disable2FA(userID int64, _ /* password */, totpCode s
 	// Remove backup codes
 	ctx := context.Background()
 	backupKey := fmt.Sprintf("backup_codes:%d", userID)
-	s.redisManager.Del(ctx, backupKey)
+	if err := s.redisManager.Del(ctx, backupKey); err != nil {
+		// Log error but don't fail the operation
+	}
 
 	return nil
 }

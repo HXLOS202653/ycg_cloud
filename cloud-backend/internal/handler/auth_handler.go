@@ -2,6 +2,7 @@
 package handler
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -1252,6 +1253,7 @@ func (h *AuthHandler) RegenerateBackupCodes(c *gin.Context) {
 
 // Helper functions for Register method to reduce complexity
 
+// ValidationError represents a validation error with structured information
 type ValidationError struct {
 	Code    string
 	Message string
@@ -1438,7 +1440,8 @@ func (h *AuthHandler) sendValidationError(c *gin.Context, code, message, details
 }
 
 func (h *AuthHandler) sendValidationErrorFromValidation(c *gin.Context, err error) {
-	if valErr, ok := err.(*ValidationError); ok {
+	var valErr *ValidationError
+	if errors.As(err, &valErr) {
 		h.sendValidationError(c, valErr.Code, valErr.Message, valErr.Details)
 	} else {
 		h.sendValidationError(c, "USER_VALIDATION_UNKNOWN", "验证失败", err.Error())

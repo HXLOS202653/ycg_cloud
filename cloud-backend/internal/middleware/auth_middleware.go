@@ -5,8 +5,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/service"
 	"github.com/gin-gonic/gin"
+
+	"github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/service"
 )
 
 // AuthMiddleware creates JWT authentication middleware

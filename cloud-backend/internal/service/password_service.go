@@ -102,110 +102,21 @@ func (s *PasswordService) ValidatePassword(password string, userInfo map[string]
 
 	requirements := s.GetPasswordRequirements()
 
-	// Basic length validation
-	if len(password) < requirements.MinLength {
-		result.Errors = append(result.Errors, fmt.Sprintf("密码长度不能少于%d位", requirements.MinLength))
-		result.IsValid = false
-	} else if len(password) >= requirements.MinLength {
-		result.Score += 10
-	}
+	// Validate length
+	s.validateLength(password, requirements, result)
 
-	if len(password) > requirements.MaxLength {
-		result.Errors = append(result.Errors, fmt.Sprintf("密码长度不能超过%d位", requirements.MaxLength))
-		result.IsValid = false
-	}
+	// Validate character types
+	charTypes := s.analyzeCharacterTypes(password)
+	s.validateCharacterTypes(charTypes, requirements, result)
 
-	// Character type validation
-	hasUpper := false
-	hasLower := false
-	hasNumber := false
-	hasSpecial := false
+	// Add complexity scoring
+	s.addComplexityScoring(password, result)
 
-	for _, char := range password {
-		switch {
-		case unicode.IsUpper(char):
-			hasUpper = true
-		case unicode.IsLower(char):
-			hasLower = true
-		case unicode.IsDigit(char):
-			hasNumber = true
-		case unicode.IsPunct(char) || unicode.IsSymbol(char):
-			hasSpecial = true
-		}
-	}
+	// Security checks
+	s.performSecurityChecks(password, userInfo, requirements, result)
 
-	// Check character type requirements
-	if requirements.RequireUppercase && !hasUpper {
-		result.Errors = append(result.Errors, "密码必须包含大写字母")
-		result.IsValid = false
-	} else if hasUpper {
-		result.Score += 15
-	}
-
-	if requirements.RequireLowercase && !hasLower {
-		result.Errors = append(result.Errors, "密码必须包含小写字母")
-		result.IsValid = false
-	} else if hasLower {
-		result.Score += 15
-	}
-
-	if requirements.RequireNumbers && !hasNumber {
-		result.Errors = append(result.Errors, "密码必须包含数字")
-		result.IsValid = false
-	} else if hasNumber {
-		result.Score += 15
-	}
-
-	if requirements.RequireSpecialChars && !hasSpecial {
-		result.Errors = append(result.Errors, "密码必须包含特殊字符 (!@#$%^&*等)")
-		result.IsValid = false
-	} else if hasSpecial {
-		result.Score += 15
-	}
-
-	// Length bonus
-	if len(password) >= 12 {
-		result.Score += 10
-	}
-	if len(password) >= 16 {
-		result.Score += 10
-	}
-
-	// Complexity checks
-	result.Score += s.checkPasswordComplexity(password)
-
-	// Common password check
-	if requirements.ForbidCommon && s.isCommonPassword(password) {
-		result.Errors = append(result.Errors, "密码过于常见，请使用更复杂的密码")
-		result.IsValid = false
-		result.Score -= 20
-	}
-
-	// Personal information check
-	if requirements.ForbidPersonal && userInfo != nil {
-		if s.containsPersonalInfo(password, userInfo) {
-			result.Errors = append(result.Errors, "密码不能包含个人信息（用户名、邮箱等）")
-			result.IsValid = false
-			result.Score -= 15
-		}
-	}
-
-	// Pattern checks
-	if s.hasWeakPatterns(password) {
-		result.Warnings = append(result.Warnings, "密码包含常见模式，建议使用更随机的组合")
-		result.Score -= 10
-	}
-
-	// Ensure score is within bounds
-	if result.Score < 0 {
-		result.Score = 0
-	}
-	if result.Score > 100 {
-		result.Score = 100
-	}
-
-	// Determine strength level
-	result.Level = s.getPasswordLevel(result.Score)
+	// Finalize result
+	s.finalizeResult(result)
 
 	return result
 }
@@ -422,4 +333,126 @@ func (s *PasswordService) GetPasswordSecurityTips() []string {
 		"考虑使用密码管理器生成和存储复杂密码",
 		"启用双因子认证以增加账户安全性",
 	}
+}
+
+// Helper functions to reduce ValidatePassword complexity
+
+type CharacterTypes struct {
+	HasUpper   bool
+	HasLower   bool
+	HasNumber  bool
+	HasSpecial bool
+}
+
+func (s *PasswordService) validateLength(password string, requirements *PasswordRequirements, result *PasswordValidationResult) {
+	if len(password) < requirements.MinLength {
+		result.Errors = append(result.Errors, fmt.Sprintf("密码长度不能少于%d位", requirements.MinLength))
+		result.IsValid = false
+	} else if len(password) >= requirements.MinLength {
+		result.Score += 10
+	}
+
+	if len(password) > requirements.MaxLength {
+		result.Errors = append(result.Errors, fmt.Sprintf("密码长度不能超过%d位", requirements.MaxLength))
+		result.IsValid = false
+	}
+}
+
+func (s *PasswordService) analyzeCharacterTypes(password string) *CharacterTypes {
+	charTypes := &CharacterTypes{}
+
+	for _, char := range password {
+		switch {
+		case unicode.IsUpper(char):
+			charTypes.HasUpper = true
+		case unicode.IsLower(char):
+			charTypes.HasLower = true
+		case unicode.IsDigit(char):
+			charTypes.HasNumber = true
+		case unicode.IsPunct(char) || unicode.IsSymbol(char):
+			charTypes.HasSpecial = true
+		}
+	}
+
+	return charTypes
+}
+
+func (s *PasswordService) validateCharacterTypes(charTypes *CharacterTypes, requirements *PasswordRequirements, result *PasswordValidationResult) {
+	if requirements.RequireUppercase && !charTypes.HasUpper {
+		result.Errors = append(result.Errors, "密码必须包含大写字母")
+		result.IsValid = false
+	} else if charTypes.HasUpper {
+		result.Score += 15
+	}
+
+	if requirements.RequireLowercase && !charTypes.HasLower {
+		result.Errors = append(result.Errors, "密码必须包含小写字母")
+		result.IsValid = false
+	} else if charTypes.HasLower {
+		result.Score += 15
+	}
+
+	if requirements.RequireNumbers && !charTypes.HasNumber {
+		result.Errors = append(result.Errors, "密码必须包含数字")
+		result.IsValid = false
+	} else if charTypes.HasNumber {
+		result.Score += 15
+	}
+
+	if requirements.RequireSpecialChars && !charTypes.HasSpecial {
+		result.Errors = append(result.Errors, "密码必须包含特殊字符 (!@#$%^&*等)")
+		result.IsValid = false
+	} else if charTypes.HasSpecial {
+		result.Score += 15
+	}
+}
+
+func (s *PasswordService) addComplexityScoring(password string, result *PasswordValidationResult) {
+	// Length bonus
+	if len(password) >= 12 {
+		result.Score += 10
+	}
+	if len(password) >= 16 {
+		result.Score += 10
+	}
+
+	// Complexity checks
+	result.Score += s.checkPasswordComplexity(password)
+}
+
+func (s *PasswordService) performSecurityChecks(password string, userInfo map[string]string, requirements *PasswordRequirements, result *PasswordValidationResult) {
+	// Common password check
+	if requirements.ForbidCommon && s.isCommonPassword(password) {
+		result.Errors = append(result.Errors, "密码过于常见，请使用更复杂的密码")
+		result.IsValid = false
+		result.Score -= 20
+	}
+
+	// Personal information check
+	if requirements.ForbidPersonal && userInfo != nil {
+		if s.containsPersonalInfo(password, userInfo) {
+			result.Errors = append(result.Errors, "密码不能包含个人信息（用户名、邮箱等）")
+			result.IsValid = false
+			result.Score -= 15
+		}
+	}
+
+	// Pattern checks
+	if s.hasWeakPatterns(password) {
+		result.Warnings = append(result.Warnings, "密码包含常见模式，建议使用更随机的组合")
+		result.Score -= 10
+	}
+}
+
+func (s *PasswordService) finalizeResult(result *PasswordValidationResult) {
+	// Ensure score is within bounds
+	if result.Score < 0 {
+		result.Score = 0
+	}
+	if result.Score > 100 {
+		result.Score = 100
+	}
+
+	// Determine strength level
+	result.Level = s.getPasswordLevel(result.Score)
 }

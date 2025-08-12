@@ -384,9 +384,18 @@ func GetPermissionInfo(c *gin.Context) *PermissionInfo {
 	resource, _ := c.Get("checked_resource")
 	action, _ := c.Get("checked_action")
 
+	resourceStr, ok := resource.(string)
+	if !ok {
+		resourceStr = "unknown"
+	}
+	actionStr, ok := action.(string)
+	if !ok {
+		actionStr = "unknown"
+	}
+
 	return &PermissionInfo{
-		Resource: resource.(string),
-		Action:   action.(string),
+		Resource: resourceStr,
+		Action:   actionStr,
 		Allowed:  checkResult.Allowed,
 		Reason:   checkResult.Reason,
 	}

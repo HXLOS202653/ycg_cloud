@@ -279,8 +279,8 @@ func (s *PermissionService) GetUserPermissions(userID int64) ([]model.Permission
 
 	// Convert map to slice
 	permissions := make([]model.Permission, 0, len(permMap))
-	for _, perm := range permMap {
-		permissions = append(permissions, perm)
+	for key := range permMap {
+		permissions = append(permissions, permMap[key])
 	}
 
 	return permissions, nil
@@ -290,22 +290,22 @@ func (s *PermissionService) GetUserPermissions(userID int64) ([]model.Permission
 func (s *PermissionService) InitializeSystemPermissions() error {
 	// Create system permissions
 	systemPerms := model.GetSystemPermissions()
-	for _, perm := range systemPerms {
+	for i := range systemPerms {
 		var existing model.Permission
-		if err := s.db.Where("name = ?", perm.Name).First(&existing).Error; errors.Is(err, gorm.ErrRecordNotFound) {
-			if err := s.db.Create(&perm).Error; err != nil {
-				return fmt.Errorf("failed to create permission %s: %w", perm.Name, err)
+		if err := s.db.Where("name = ?", systemPerms[i].Name).First(&existing).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+			if err := s.db.Create(&systemPerms[i]).Error; err != nil {
+				return fmt.Errorf("failed to create permission %s: %w", systemPerms[i].Name, err)
 			}
 		}
 	}
 
 	// Create system roles
 	systemRoles := model.GetSystemRoles()
-	for _, role := range systemRoles {
+	for i := range systemRoles {
 		var existing model.Role
-		if err := s.db.Where("name = ?", role.Name).First(&existing).Error; errors.Is(err, gorm.ErrRecordNotFound) {
-			if err := s.db.Create(&role).Error; err != nil {
-				return fmt.Errorf("failed to create role %s: %w", role.Name, err)
+		if err := s.db.Where("name = ?", systemRoles[i].Name).First(&existing).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+			if err := s.db.Create(&systemRoles[i]).Error; err != nil {
+				return fmt.Errorf("failed to create role %s: %w", systemRoles[i].Name, err)
 			}
 		}
 	}
@@ -408,6 +408,7 @@ func (s *PermissionService) cachePermissionResult(key string, result *Permission
 	ctx := context.Background()
 	if err := s.redisManager.SetStruct(ctx, key, result, ttl); err != nil {
 		// Log cache error but don't fail the permission check
+		fmt.Printf("Failed to cache permission result: %v\n", err)
 	}
 }
 
@@ -422,6 +423,7 @@ func (s *PermissionService) clearUserPermissionCache(userID int64) {
 	for _, key := range keys {
 		if err := s.redisManager.Del(ctx, key); err != nil {
 			// Log cache deletion error but continue
+			fmt.Printf("Failed to delete permission cache key %s: %v\n", key, err)
 		}
 	}
 }
