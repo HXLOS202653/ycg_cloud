@@ -1,0 +1,38 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# 检查提交消息格式
+# 格式：type(scope): description
+# 例如：feat(auth): add login functionality
+
+commit_regex='^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .{1,50}'
+
+error_msg="提交消息格式错误！
+正确格式：type(scope): description
+
+类型（type）:
+  feat:     新功能
+  fix:      修复bug
+  docs:     文档更新
+  style:    代码格式调整（不影响功能）
+  refactor: 代码重构
+  test:     测试相关
+  chore:    杂务（如配置、依赖更新）
+  perf:     性能优化
+  ci:       CI/CD相关
+  build:    构建相关
+  revert:   回滚
+
+示例：
+  feat(auth): add user login functionality
+  fix(ui): resolve button alignment issue
+  docs: update README with setup instructions"
+
+# 读取提交消息
+commit_message=$(cat "$1")
+
+# 检查格式
+if ! echo "$commit_message" | grep -qE "$commit_regex"; then
+    echo "$error_msg"
+    exit 1
+fi
