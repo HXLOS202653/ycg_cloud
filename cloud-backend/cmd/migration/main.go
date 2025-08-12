@@ -1,3 +1,5 @@
+// Package main provides the database migration tool for the YCG Cloud system.
+// It supports MySQL and MongoDB database schema migrations with version control and rollback capabilities.
 package main
 
 import (
@@ -48,7 +50,7 @@ func NewMigrationTool(dsn, migrationsDir string, verbose, dryRun bool) (*Migrati
 		Logger: logger.Default.LogMode(logLevel),
 	})
 	if err != nil {
-		return nil, fmt.Errorf("连接数据库失败: %v", err)
+		return nil, fmt.Errorf("连接数据库失败: %w", err)
 	}
 
 	return &MigrationTool{
@@ -67,7 +69,7 @@ func main() {
 		Long: `网络云盘系统数据库迁移工具
 支持MySQL和MongoDB的数据库结构迁移，包括表创建、索引管理、数据转换等功能。
 遵循版本控制和回滚机制，确保数据库结构的安全迁移。`,
-		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		PersistentPreRun: func(_ *cobra.Command, _ []string) {
 			// 解析标志
 			flag.Parse()
 
@@ -110,7 +112,7 @@ func main() {
   
   # 预览模式
   migration up --dry-run --dsn "..."`,
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, _ []string) {
 			tool, err := NewMigrationTool(*dsn, *migrationsDir, *verbose, *dryRun)
 			if err != nil {
 				log.Fatalf("初始化迁移工具失败: %v", err)
@@ -138,7 +140,7 @@ func main() {
   
   # 回滚指定步数
   migration down --steps 2 --dsn "..."`,
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, _ []string) {
 			tool, err := NewMigrationTool(*dsn, *migrationsDir, *verbose, *dryRun)
 			if err != nil {
 				log.Fatalf("初始化迁移工具失败: %v", err)
@@ -158,7 +160,7 @@ func main() {
 		Short: "查看数据库迁移状态",
 		Long: `查看当前数据库的迁移状态，包括已执行的迁移版本和待执行的迁移。
 显示每个迁移文件的执行状态和时间。`,
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, _ []string) {
 			tool, err := NewMigrationTool(*dsn, *migrationsDir, *verbose, *dryRun)
 			if err != nil {
 				log.Fatalf("初始化迁移工具失败: %v", err)
@@ -182,7 +184,7 @@ func main() {
   
   # 创建索引迁移
   migration create add_user_indexes`,
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, args []string) {
 			tool, err := NewMigrationTool(*dsn, *migrationsDir, *verbose, *dryRun)
 			if err != nil {
 				log.Fatalf("初始化迁移工具失败: %v", err)
@@ -199,7 +201,7 @@ func main() {
 	versionCmd := &cobra.Command{
 		Use:   "version",
 		Short: "显示工具版本信息",
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, _ []string) {
 			fmt.Println("网络云盘系统数据库迁移工具 v1.0.0")
 			fmt.Println("支持 MySQL 8.0+ 和 MongoDB 4.4+")
 			fmt.Println("Build: " + getBuildInfo())
@@ -226,7 +228,7 @@ func getBuildInfo() string {
 // ensureDir 确保目录存在
 func ensureDir(dir string) error {
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		return os.MkdirAll(dir, 0755)
+		return os.MkdirAll(dir, 0750)
 	}
 	return nil
 }
@@ -238,7 +240,7 @@ func getMigrationsPath(migrationsDir, dbType string) string {
 
 // validateMigrationName 验证迁移名称
 func validateMigrationName(name string) error {
-	if len(name) == 0 {
+	if name == "" {
 		return fmt.Errorf("迁移名称不能为空")
 	}
 

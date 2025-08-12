@@ -59,7 +59,7 @@ func TestConnectionPool_Creation(t *testing.T) {
 	db := createTestDB(t)
 	defer func() {
 		sqlDB, _ := db.DB()
-		sqlDB.Close()
+		_ = sqlDB.Close()
 	}()
 
 	config := DefaultPoolConfig()
@@ -69,7 +69,7 @@ func TestConnectionPool_Creation(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, pool)
 
-	defer pool.Close()
+	defer func() { _ = pool.Close() }()
 
 	assert.Equal(t, db, pool.GetDB())
 	assert.Equal(t, config, pool.GetConfig())
@@ -79,7 +79,7 @@ func TestConnectionPool_Metrics(t *testing.T) {
 	db := createTestDB(t)
 	defer func() {
 		sqlDB, _ := db.DB()
-		sqlDB.Close()
+		_ = sqlDB.Close()
 	}()
 
 	config := DefaultPoolConfig()
@@ -88,7 +88,7 @@ func TestConnectionPool_Metrics(t *testing.T) {
 
 	pool, err := NewConnectionPool(db, config)
 	require.NoError(t, err)
-	defer pool.Close()
+	defer func() { _ = pool.Close() }()
 
 	// Get initial metrics
 	metrics := pool.GetMetrics()
@@ -113,7 +113,7 @@ func TestConnectionPool_ExecuteWithTimeout(t *testing.T) {
 	db := createTestDB(t)
 	defer func() {
 		sqlDB, _ := db.DB()
-		sqlDB.Close()
+		_ = sqlDB.Close()
 	}()
 
 	config := DefaultPoolConfig()
@@ -121,7 +121,7 @@ func TestConnectionPool_ExecuteWithTimeout(t *testing.T) {
 
 	pool, err := NewConnectionPool(db, config)
 	require.NoError(t, err)
-	defer pool.Close()
+	defer func() { _ = pool.Close() }()
 
 	// Test successful execution within timeout
 	err = pool.ExecuteWithTimeout(1*time.Second, func(db *gorm.DB) error {
@@ -143,7 +143,7 @@ func TestConnectionPool_ExecuteWithContext(t *testing.T) {
 	db := createTestDB(t)
 	defer func() {
 		sqlDB, _ := db.DB()
-		sqlDB.Close()
+		_ = sqlDB.Close()
 	}()
 
 	config := DefaultPoolConfig()
@@ -151,7 +151,7 @@ func TestConnectionPool_ExecuteWithContext(t *testing.T) {
 
 	pool, err := NewConnectionPool(db, config)
 	require.NoError(t, err)
-	defer pool.Close()
+	defer func() { _ = pool.Close() }()
 
 	// Test context cancellation
 	ctx, cancel := context.WithCancel(context.Background())
@@ -175,7 +175,7 @@ func TestConnectionPool_HealthCheck(t *testing.T) {
 	db := createTestDB(t)
 	defer func() {
 		sqlDB, _ := db.DB()
-		sqlDB.Close()
+		_ = sqlDB.Close()
 	}()
 
 	config := DefaultPoolConfig()
@@ -184,7 +184,7 @@ func TestConnectionPool_HealthCheck(t *testing.T) {
 
 	pool, err := NewConnectionPool(db, config)
 	require.NoError(t, err)
-	defer pool.Close()
+	defer func() { _ = pool.Close() }()
 
 	// Initially should be healthy
 	assert.True(t, pool.IsHealthy())
@@ -204,7 +204,7 @@ func TestConnectionPool_RetryLogic(t *testing.T) {
 	db := createTestDB(t)
 	defer func() {
 		sqlDB, _ := db.DB()
-		sqlDB.Close()
+		_ = sqlDB.Close()
 	}()
 
 	config := DefaultPoolConfig()
@@ -214,7 +214,7 @@ func TestConnectionPool_RetryLogic(t *testing.T) {
 
 	pool, err := NewConnectionPool(db, config)
 	require.NoError(t, err)
-	defer pool.Close()
+	defer func() { _ = pool.Close() }()
 
 	attempts := 0
 	err = pool.ExecuteWithRetry(func(db *gorm.DB) error {
@@ -233,7 +233,7 @@ func TestCreatePoolFromConfig(t *testing.T) {
 	db := createTestDB(t)
 	defer func() {
 		sqlDB, _ := db.DB()
-		sqlDB.Close()
+		_ = sqlDB.Close()
 	}()
 
 	mysqlConfig := &config.MySQLConfig{
@@ -248,7 +248,7 @@ func TestCreatePoolFromConfig(t *testing.T) {
 	pool, err := CreatePoolFromConfig(db, mysqlConfig)
 	require.NoError(t, err)
 	require.NotNil(t, pool)
-	defer pool.Close()
+	defer func() { _ = pool.Close() }()
 
 	poolConfig := pool.GetConfig()
 	assert.Equal(t, 50, poolConfig.MaxOpenConns)
@@ -264,7 +264,7 @@ func BenchmarkConnectionPool_ExecuteWithMetrics(b *testing.B) {
 	db := createTestDB(b)
 	defer func() {
 		sqlDB, _ := db.DB()
-		sqlDB.Close()
+		_ = sqlDB.Close()
 	}()
 
 	config := DefaultPoolConfig()
@@ -272,12 +272,12 @@ func BenchmarkConnectionPool_ExecuteWithMetrics(b *testing.B) {
 
 	pool, err := NewConnectionPool(db, config)
 	require.NoError(b, err)
-	defer pool.Close()
+	defer func() { _ = pool.Close() }()
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			pool.ExecuteWithMetrics(func(db *gorm.DB) error {
+			_ = pool.ExecuteWithMetrics(func(db *gorm.DB) error {
 				// Simulate lightweight operation
 				return nil
 			})
@@ -289,7 +289,7 @@ func BenchmarkConnectionPool_ExecuteWithRetry(b *testing.B) {
 	db := createTestDB(b)
 	defer func() {
 		sqlDB, _ := db.DB()
-		sqlDB.Close()
+		_ = sqlDB.Close()
 	}()
 
 	config := DefaultPoolConfig()
@@ -298,12 +298,12 @@ func BenchmarkConnectionPool_ExecuteWithRetry(b *testing.B) {
 
 	pool, err := NewConnectionPool(db, config)
 	require.NoError(b, err)
-	defer pool.Close()
+	defer func() { _ = pool.Close() }()
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			pool.ExecuteWithRetry(func(db *gorm.DB) error {
+			_ = pool.ExecuteWithRetry(func(db *gorm.DB) error {
 				// Always succeed for benchmark
 				return nil
 			})

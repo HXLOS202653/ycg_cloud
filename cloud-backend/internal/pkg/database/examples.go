@@ -23,7 +23,7 @@ func Example() {
 	if err != nil {
 		log.Fatalf("Failed to create MySQL manager: %v", err)
 	}
-	defer mysqlManager.Close()
+	defer func() { _ = mysqlManager.Close() }()
 
 	// Example 1: Basic transaction usage
 	ExampleBasicTransaction(mysqlManager)
@@ -173,7 +173,7 @@ func ExampleRetryOperations(manager *MySQLManager) {
 	log.Println("=== Example: Retry Operations ===")
 
 	// Example of operation that might fail and need retry
-	err := manager.ExecuteWithRetry(func(db *gorm.DB) error {
+	err := manager.ExecuteWithRetry(func(_ *gorm.DB) error {
 		log.Println("Attempting database operation...")
 
 		// Simulate an operation that might fail occasionally

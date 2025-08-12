@@ -40,13 +40,13 @@ type MigrationFile struct {
 func (mt *MigrationTool) Up(targetVersion string, steps int) error {
 	// 初始化迁移表
 	if err := mt.initMigrationTable(); err != nil {
-		return fmt.Errorf("初始化迁移表失败: %v", err)
+		return fmt.Errorf("初始化迁移表失败: %w", err)
 	}
 
 	// 获取待执行的迁移文件
 	migrations, err := mt.getPendingMigrations()
 	if err != nil {
-		return fmt.Errorf("获取待迁移文件失败: %v", err)
+		return fmt.Errorf("获取待迁移文件失败: %w", err)
 	}
 
 	if len(migrations) == 0 {
@@ -91,7 +91,7 @@ func (mt *MigrationTool) Up(targetVersion string, steps int) error {
 func (mt *MigrationTool) Down(targetVersion string, steps int) error {
 	// 初始化迁移表
 	if err := mt.initMigrationTable(); err != nil {
-		return fmt.Errorf("初始化迁移表失败: %v", err)
+		return fmt.Errorf("初始化迁移表失败: %w", err)
 	}
 
 	// 获取已应用的迁移
@@ -142,7 +142,7 @@ func (mt *MigrationTool) Down(targetVersion string, steps int) error {
 func (mt *MigrationTool) Status() error {
 	// 初始化迁移表
 	if err := mt.initMigrationTable(); err != nil {
-		return fmt.Errorf("初始化迁移表失败: %v", err)
+		return fmt.Errorf("初始化迁移表失败: %w", err)
 	}
 
 	// 获取所有迁移文件
@@ -237,7 +237,7 @@ func (mt *MigrationTool) Create(name string) error {
 
 `, name, version, time.Now().Format("2006-01-02 15:04:05"))
 
-	if err := ioutil.WriteFile(upFile, []byte(upTemplate), 0644); err != nil {
+	if err := os.WriteFile(upFile, []byte(upTemplate), 0600); err != nil {
 		return fmt.Errorf("创建up文件失败: %v", err)
 	}
 
@@ -253,9 +253,9 @@ func (mt *MigrationTool) Create(name string) error {
 
 `, name, version, time.Now().Format("2006-01-02 15:04:05"))
 
-	if err := ioutil.WriteFile(downFile, []byte(downTemplate), 0644); err != nil {
+	if err := os.WriteFile(downFile, []byte(downTemplate), 0600); err != nil {
 		// 如果down文件创建失败，删除已创建的up文件
-		os.Remove(upFile)
+		_ = os.Remove(upFile)
 		return fmt.Errorf("创建down文件失败: %v", err)
 	}
 

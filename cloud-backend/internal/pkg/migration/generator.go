@@ -59,7 +59,7 @@ func (g *Generator) GenerateMySQLMigration(name, description string) error {
 	downFile := filepath.Join(g.migrationsDir, "mysql", fmt.Sprintf("%s_%s.down.sql", version, name))
 	if err := g.generateFromTemplate("mysql_down.tmpl", downFile, data); err != nil {
 		// 如果down文件生成失败，删除已生成的up文件
-		os.Remove(upFile)
+		_ = os.Remove(upFile)
 		return fmt.Errorf("生成down文件失败: %v", err)
 	}
 
@@ -99,7 +99,7 @@ func (g *Generator) GenerateMongoDBMigration(name, description string) error {
 // generateFromTemplate 从模板生成文件
 func (g *Generator) generateFromTemplate(templateName, outputFile string, data interface{}) error {
 	// 确保输出目录存在
-	if err := os.MkdirAll(filepath.Dir(outputFile), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(outputFile), 0750); err != nil {
 		return fmt.Errorf("创建目录失败: %v", err)
 	}
 
@@ -120,7 +120,7 @@ func (g *Generator) generateFromTemplate(templateName, outputFile string, data i
 	if err != nil {
 		return fmt.Errorf("创建文件失败: %v", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	// 执行模板
 	if err := tmpl.Execute(file, data); err != nil {
@@ -289,7 +289,7 @@ func generateVersion() string {
 func toPascalCase(s string) string {
 	words := strings.Split(s, "_")
 	for i, word := range words {
-		if len(word) > 0 {
+		if word != "" {
 			words[i] = strings.ToUpper(word[:1]) + strings.ToLower(word[1:])
 		}
 	}
@@ -314,10 +314,10 @@ func getCurrentUser() string {
 
 // CreateTemplateDir 创建模板目录和默认模板文件
 func (g *Generator) CreateTemplateDir() error {
-	templateDir := filepath.Join(g.templateDir)
+	templateDir := g.templateDir
 
 	// 创建模板目录
-	if err := os.MkdirAll(templateDir, 0755); err != nil {
+	if err := os.MkdirAll(templateDir, 0750); err != nil {
 		return fmt.Errorf("创建模板目录失败: %v", err)
 	}
 

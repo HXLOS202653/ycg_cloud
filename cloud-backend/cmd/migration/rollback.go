@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -136,7 +137,7 @@ func (rm *RollbackManager) CreateRollbackPlan(targetVersion string, steps int) e
 
 	content := rm.generateRollbackPlan(rollbackInfos)
 
-	if err := ioutil.WriteFile(planFile, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(planFile, []byte(content), 0600); err != nil {
 		return fmt.Errorf("创建回滚计划文件失败: %v", err)
 	}
 

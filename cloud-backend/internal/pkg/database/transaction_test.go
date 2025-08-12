@@ -47,7 +47,7 @@ func TestTransactionManager_WithTransaction_Rollback(t *testing.T) {
 
 	// Test transaction rollback on error
 	testError := errors.New("test error")
-	err := tm.WithTransaction(ctx, func(tx *gorm.DB) error {
+	err := tm.WithTransaction(ctx, func(_ *gorm.DB) error {
 		return testError
 	})
 
@@ -72,7 +72,7 @@ func TestTransactionManager_WithTransactionOptions(t *testing.T) {
 	}
 
 	executed := false
-	err := tm.WithTransactionOptions(ctx, opts, func(tx *gorm.DB) error {
+	err := tm.WithTransactionOptions(ctx, opts, func(_ *gorm.DB) error {
 		executed = true
 		return nil
 	})
@@ -92,7 +92,7 @@ func TestTransactionManager_WithReadOnlyTransaction(t *testing.T) {
 	ctx := context.Background()
 
 	executed := false
-	err := tm.WithReadOnlyTransaction(ctx, func(tx *gorm.DB) error {
+	err := tm.WithReadOnlyTransaction(ctx, func(_ *gorm.DB) error {
 		executed = true
 		// In a real test, you might verify read-only behavior
 		return nil
@@ -158,7 +158,7 @@ func TestTransactionManager_Timeout(t *testing.T) {
 		Timeout:   100 * time.Millisecond,
 	}
 
-	err := tm.WithTransactionOptions(ctx, opts, func(tx *gorm.DB) error {
+	err := tm.WithTransactionOptions(ctx, opts, func(_ *gorm.DB) error {
 		// Sleep longer than timeout
 		time.Sleep(200 * time.Millisecond)
 		return nil
@@ -370,7 +370,7 @@ func BenchmarkTransactionManager_WithTransaction(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			tm.WithTransaction(ctx, func(tx *gorm.DB) error {
+			_ = tm.WithTransaction(ctx, func(tx *gorm.DB) error {
 				// Simulate lightweight operation
 				return nil
 			})
@@ -399,6 +399,6 @@ func BenchmarkBatchOperation_ExecuteBatch(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		batchOp.ExecuteBatch(ctx, operations)
+		_ = batchOp.ExecuteBatch(ctx, operations)
 	}
 }
