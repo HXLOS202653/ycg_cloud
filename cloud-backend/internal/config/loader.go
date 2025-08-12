@@ -18,6 +18,7 @@ type Config struct {
 	Database DatabaseConfig `mapstructure:"database"`
 	Storage  StorageConfig  `mapstructure:"storage"`
 	Auth     AuthConfig     `mapstructure:"auth"`
+	Email    EmailConfig    `mapstructure:"email"`
 	Log      LogConfig      `mapstructure:"log"`
 	Monitor  MonitorConfig  `mapstructure:"monitor"`
 }
@@ -57,6 +58,18 @@ type AuthConfig struct {
 	TokenExpiry   time.Duration `mapstructure:"token_expiry"`
 	RefreshExpiry time.Duration `mapstructure:"refresh_expiry"`
 	BCryptCost    int           `mapstructure:"bcrypt_cost"`
+}
+
+// EmailConfig contains email/SMTP configuration.
+type EmailConfig struct {
+	SMTPHost     string `mapstructure:"smtp_host"`
+	SMTPPort     int    `mapstructure:"smtp_port"`
+	SMTPSecure   bool   `mapstructure:"smtp_secure"`
+	SMTPUser     string `mapstructure:"smtp_user"`
+	SMTPPassword string `mapstructure:"smtp_password"`
+	SMTPFrom     string `mapstructure:"smtp_from"`
+	SMTPFromName string `mapstructure:"smtp_from_name"`
+	Enabled      bool   `mapstructure:"enabled"`
 }
 
 // LogConfig contains logging configuration.
@@ -203,6 +216,16 @@ func setDefaultValues(v *viper.Viper) {
 	v.SetDefault("auth.token_expiry", "24h")
 	v.SetDefault("auth.refresh_expiry", "168h")
 	v.SetDefault("auth.bcrypt_cost", 12)
+
+	// Email defaults
+	v.SetDefault("email.smtp_host", "smtp.qq.com")
+	v.SetDefault("email.smtp_port", 587)
+	v.SetDefault("email.smtp_secure", false) // Use STARTTLS instead of SSL
+	v.SetDefault("email.smtp_user", "")      // Will be set via environment variable
+	v.SetDefault("email.smtp_password", "")  // Will be set via environment variable
+	v.SetDefault("email.smtp_from", "")      // Will be set via environment variable
+	v.SetDefault("email.smtp_from_name", "YCG Cloud")
+	v.SetDefault("email.enabled", true)
 
 	// Log defaults
 	v.SetDefault("log.level", "info")

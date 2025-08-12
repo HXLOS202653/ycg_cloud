@@ -7,12 +7,23 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/handler"
+	"github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/middleware"
+	"github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/service"
 )
 
 // addRoutes configures all API routes for the application.
 func (s *Server) addRoutes(r *gin.Engine) {
-	// Initialize health handler
+	// Initialize services
+	authService := service.NewAuthService(s.Config)
+	emailService := service.NewEmailService(s.Config)
+	verificationService := service.NewVerificationService(s.Config, s.DB.GetRedisClient(), emailService)
+	sessionService := service.NewSessionService(s.Config, s.DB.GetMySQLDB(), s.DB.GetRedisClient())
+	totpService := service.NewTOTPService("YCG Cloud")
+	twoFactorService := service.NewTwoFactorService(s.DB.GetMySQLDB(), s.DB.GetRedisClient(), totpService)
+
+	// Initialize handlers
 	healthHandler := handler.NewHealthHandler(s.Config, s.DB)
+	authHandler := handler.NewAuthHandler(authService, emailService, verificationService, sessionService, twoFactorService, s.DB.GetMySQLDB())
 
 	// Health check endpoints
 	r.GET("/health", healthHandler.Health)
@@ -24,13 +35,40 @@ func (s *Server) addRoutes(r *gin.Engine) {
 	// API version 1 routes
 	v1 := r.Group("/api/v1")
 
-	// Authentication routes
+	// Public authentication routes (no auth required)
 	auth := v1.Group("/auth")
-	auth.POST("/login", s.placeholder("login"))
-	auth.POST("/register", s.placeholder("register"))
-	auth.POST("/logout", s.placeholder("logout"))
-	auth.POST("/refresh", s.placeholder("refresh"))
-	auth.GET("/profile", s.placeholder("profile"))
+	{
+		auth.POST("/register", authHandler.Register)
+		auth.POST("/login", authHandler.Login)
+		auth.POST("/refresh", authHandler.RefreshToken)
+		auth.POST("/forgot-password", s.placeholder("forgot password"))
+		auth.POST("/reset-password", s.placeholder("reset password"))
+
+		// Email verification routes
+		auth.POST("/send-verification", authHandler.SendVerificationCode)
+		auth.POST("/verify-email", authHandler.VerifyEmail)
+		auth.POST("/resend-verification", authHandler.ResendVerificationCode)
+	}
+
+	// Protected routes (require authentication)
+	protected := v1.Group("")
+	protected.Use(middleware.AuthMiddleware(authService))
+	{
+		// User profile routes
+		protected.GET("/auth/profile", authHandler.GetCurrentUser)
+		protected.POST("/auth/logout", authHandler.Logout)
+		protected.POST("/auth/logout-all", authHandler.LogoutAll)
+		protected.GET("/auth/sessions", authHandler.GetActiveSessions)
+
+		// Two-factor authentication routes
+		protected.POST("/auth/2fa/setup", authHandler.Setup2FA)
+		protected.POST("/auth/2fa/enable", authHandler.Enable2FA)
+		protected.POST("/auth/2fa/disable", authHandler.Disable2FA)
+		protected.POST("/auth/2fa/backup-codes", authHandler.RegenerateBackupCodes)
+	}
+
+	// Public 2FA verification route (no auth required for temporary verification)
+	auth.POST("/2fa/verify", authHandler.Verify2FA)
 
 	// File management routes
 	files := v1.Group("/files")

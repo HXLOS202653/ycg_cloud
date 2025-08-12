@@ -3,6 +3,7 @@ package database
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"time"
@@ -219,4 +220,70 @@ func (r *RedisManager) AcquireLock(ctx context.Context, lockKey string, expirati
 // ReleaseLock releases a distributed lock.
 func (r *RedisManager) ReleaseLock(ctx context.Context, lockKey string) error {
 	return r.client.Del(ctx, lockKey).Err()
+}
+
+// Generic Redis operations for services
+
+// Set sets a key-value pair with expiration
+func (r *RedisManager) Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error {
+	return r.client.Set(ctx, key, value, expiration).Err()
+}
+
+// SetEX sets a key-value pair with expiration (alias for Set)
+func (r *RedisManager) SetEX(ctx context.Context, key string, value interface{}, expiration time.Duration) error {
+	return r.Set(ctx, key, value, expiration)
+}
+
+// Get gets a value by key
+func (r *RedisManager) Get(ctx context.Context, key string) (string, error) {
+	return r.client.Get(ctx, key).Result()
+}
+
+// Del deletes a key
+func (r *RedisManager) Del(ctx context.Context, key string) error {
+	return r.client.Del(ctx, key).Err()
+}
+
+// Incr increments a key's value
+func (r *RedisManager) Incr(ctx context.Context, key string) (int64, error) {
+	return r.client.Incr(ctx, key).Result()
+}
+
+// Expire sets expiration for a key
+func (r *RedisManager) Expire(ctx context.Context, key string, expiration time.Duration) error {
+	return r.client.Expire(ctx, key, expiration).Err()
+}
+
+// Pipeline returns a new pipeline
+func (r *RedisManager) Pipeline() redis.Pipeliner {
+	return r.client.Pipeline()
+}
+
+// SetStruct stores a struct as JSON
+func (r *RedisManager) SetStruct(ctx context.Context, key string, value interface{}, expiration time.Duration) error {
+	data, err := json.Marshal(value)
+	if err != nil {
+		return fmt.Errorf("failed to marshal struct: %w", err)
+	}
+	return r.client.Set(ctx, key, data, expiration).Err()
+}
+
+// GetStruct retrieves a struct from JSON
+func (r *RedisManager) GetStruct(ctx context.Context, key string, dest interface{}) error {
+	data, err := r.client.Get(ctx, key).Result()
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal([]byte(data), dest)
+}
+
+// Exists checks if a key exists
+func (r *RedisManager) Exists(ctx context.Context, key string) (bool, error) {
+	result, err := r.client.Exists(ctx, key).Result()
+	return result > 0, err
+}
+
+// TTL returns the time to live for a key
+func (r *RedisManager) TTL(ctx context.Context, key string) (time.Duration, error) {
+	return r.client.TTL(ctx, key).Result()
 }
