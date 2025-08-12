@@ -1,0 +1,446 @@
+# 数据库索引策略配置文件
+# 基于: 07数据库设计.md 索引设计
+
+# 基础配置
+enable_fulltext: true           # 启用全文索引
+enable_partitioning: true      # 启用分区功能
+optimize_for_reads: true       # 优化读取性能
+
+# 全文索引配置
+fulltext:
+  min_word_length: 1           # 最小词长度，支持中文单字
+  ngram_token_size: 2          # N-gram分词大小，中文推荐2
+  query_expansion_limit: 20    # 查询扩展限制
+  boolean_syntax: "+ -><()~*:\"\"&|"  # 布尔搜索语法
+
+# 性能监控配置
+monitoring:
+  enable_slow_query_log: true     # 启用慢查询日志
+  slow_query_threshold: 1.0       # 慢查询阈值（秒）
+  log_unused_indexes: true        # 记录未使用的索引
+  monitoring_interval: "24h"      # 监控检查间隔
+
+# 索引维护配置
+maintenance:
+  auto_analyze: true               # 自动分析表统计信息
+  analyze_interval: "168h"        # 分析间隔（7天）
+  auto_optimize: true              # 自动优化表
+  optimize_interval: "720h"       # 优化间隔（30天）
+  cleanup_old_partitions: true    # 清理旧分区
+  partition_retention_days: 365   # 分区保留天数
+
+# MySQL 性能参数配置
+mysql_config:
+  # InnoDB 配置
+  innodb:
+    buffer_pool_size: "2G"         # 缓冲池大小（根据服务器内存调整）
+    stats_persistent: true         # 持久化统计信息
+    stats_auto_recalc: true        # 自动重计算统计信息
+    stats_sample_pages: 20         # 统计信息采样页数
+    thread_concurrency: 0          # 并发线程数（0=无限制）
+    read_io_threads: 8             # 读IO线程数
+    write_io_threads: 8            # 写IO线程数
+    lock_wait_timeout: 50          # 锁等待超时（秒）
+    deadlock_detect: true          # 死锁检测
+    adaptive_hash_index: true      # 自适应哈希索引
+
+  # 查询优化器配置
+  optimizer:
+    index_merge: true              # 索引合并
+    index_merge_union: true        # 索引合并联合
+    index_merge_sort_union: true   # 索引合并排序联合
+    index_merge_intersection: true # 索引合并交集
+
+  # 缓冲区配置
+  buffers:
+    sort_buffer_size: "2M"         # 排序缓冲区大小
+    read_buffer_size: "128K"       # 读缓冲区大小
+    read_rnd_buffer_size: "256K"   # 随机读缓冲区大小
+    tmp_table_size: "128M"         # 临时表大小
+    max_heap_table_size: "128M"    # 内存表最大大小
+
+  # 连接配置
+  connections:
+    max_connections: 1000          # 最大连接数
+    max_connect_errors: 100000     # 最大连接错误数
+    wait_timeout: 28800            # 等待超时（8小时）
+    interactive_timeout: 28800     # 交互超时（8小时）
+    connect_timeout: 10            # 连接超时（秒）
+
+# 核心表索引策略配置
+table_indexes:
+  # 用户管理模块
+  users:
+    # 登录验证索引
+    - name: "idx_users_username"
+      type: "INDEX"
+      columns: ["username"]
+      comment: "用户名登录查询"
+    - name: "idx_users_email"
+      type: "INDEX"
+      columns: ["email"]
+      comment: "邮箱登录查询"
+    - name: "idx_users_phone"
+      type: "INDEX"
+      columns: ["phone"]
+      comment: "手机号登录查询"
+    
+    # 状态筛选索引
+    - name: "idx_users_status"
+      type: "INDEX"
+      columns: ["status"]
+      comment: "用户状态筛选"
+    - name: "idx_users_role"
+      type: "INDEX"
+      columns: ["role"]
+      comment: "角色权限查询"
+    
+    # 时间序列索引
+    - name: "idx_users_created_at"
+      type: "INDEX"
+      columns: ["created_at"]
+      comment: "注册时间排序"
+    - name: "idx_users_last_login_at"
+      type: "INDEX"
+      columns: ["last_login_at"]
+      comment: "活跃度统计"
+    - name: "idx_users_deleted_at"
+      type: "INDEX"
+      columns: ["deleted_at"]
+      comment: "软删除查询"
+    
+    # 存储管理索引
+    - name: "idx_users_storage_used"
+      type: "INDEX"
+      columns: ["storage_used"]
+      comment: "存储配额管理"
+    - name: "idx_users_locked_until"
+      type: "INDEX"
+      columns: ["locked_until"]
+      comment: "账户解锁查询"
+
+  user_sessions:
+    # 会话管理索引
+    - name: "idx_user_sessions_user_id"
+      type: "INDEX"
+      columns: ["user_id"]
+      comment: "用户会话查询"
+    - name: "idx_user_sessions_session_token"
+      type: "INDEX"
+      columns: ["session_token"]
+      comment: "Token验证"
+    - name: "idx_user_sessions_expires_at"
+      type: "INDEX"
+      columns: ["expires_at"]
+      comment: "过期会话清理"
+    - name: "idx_user_sessions_is_active"
+      type: "INDEX"
+      columns: ["is_active"]
+      comment: "活跃会话筛选"
+    - name: "idx_user_sessions_last_activity_at"
+      type: "INDEX"
+      columns: ["last_activity_at"]
+      comment: "空闲检测"
+    - name: "idx_user_sessions_ip_address"
+      type: "INDEX"
+      columns: ["ip_address"]
+      comment: "安全分析"
+    
+    # 复合业务索引
+    - name: "idx_user_sessions_user_active"
+      type: "INDEX"
+      columns: ["user_id", "is_active", "expires_at"]
+      comment: "用户有效会话查询"
+
+  # 文件管理模块
+  files:
+    # 核心业务索引
+    - name: "idx_files_user_parent_deleted"
+      type: "INDEX"
+      columns: ["user_id", "parent_id", "is_deleted"]
+      comment: "文件树查询核心索引"
+    - name: "idx_files_filename"
+      type: "INDEX"
+      columns: ["filename"]
+      comment: "文件名搜索"
+    - name: "idx_files_file_path"
+      type: "INDEX"
+      columns: ["file_path(255)"]
+      comment: "路径查询"
+    
+    # 文件分类索引
+    - name: "idx_files_file_type"
+      type: "INDEX"
+      columns: ["file_type"]
+      comment: "文件类型筛选"
+    - name: "idx_files_mime_type"
+      type: "INDEX"
+      columns: ["mime_type"]
+      comment: "MIME类型查询"
+    - name: "idx_files_file_extension"
+      type: "INDEX"
+      columns: ["file_extension"]
+      comment: "扩展名索引"
+    
+    # 去重和完整性索引
+    - name: "idx_files_md5_hash"
+      type: "INDEX"
+      columns: ["md5_hash"]
+      comment: "MD5去重查询"
+    - name: "idx_files_sha256_hash"
+      type: "INDEX"
+      columns: ["sha256_hash"]
+      comment: "SHA256校验"
+    
+    # 状态筛选索引
+    - name: "idx_files_is_folder"
+      type: "INDEX"
+      columns: ["is_folder"]
+      comment: "文件夹筛选"
+    - name: "idx_files_is_deleted"
+      type: "INDEX"
+      columns: ["is_deleted"]
+      comment: "软删除筛选"
+    - name: "idx_files_is_favorite"
+      type: "INDEX"
+      columns: ["is_favorite"]
+      comment: "收藏文件"
+    - name: "idx_files_is_public"
+      type: "INDEX"
+      columns: ["is_public"]
+      comment: "公开文件"
+    
+    # 时间相关索引
+    - name: "idx_files_deleted_at"
+      type: "INDEX"
+      columns: ["deleted_at"]
+      comment: "回收站查询"
+    - name: "idx_files_created_at"
+      type: "INDEX"
+      columns: ["created_at"]
+      comment: "创建时间排序"
+    - name: "idx_files_updated_at"
+      type: "INDEX"
+      columns: ["updated_at"]
+      comment: "修改时间"
+    - name: "idx_files_last_accessed_at"
+      type: "INDEX"
+      columns: ["last_accessed_at"]
+      comment: "访问热度统计"
+    
+    # 统计和管理索引
+    - name: "idx_files_file_size"
+      type: "INDEX"
+      columns: ["file_size"]
+      comment: "文件大小排序"
+    - name: "idx_files_download_count"
+      type: "INDEX"
+      columns: ["download_count"]
+      comment: "下载热度"
+    - name: "idx_files_view_count"
+      type: "INDEX"
+      columns: ["view_count"]
+      comment: "查看统计"
+    
+    # 安全相关索引
+    - name: "idx_files_virus_scan_status"
+      type: "INDEX"
+      columns: ["virus_scan_status"]
+      comment: "病毒扫描状态"
+    - name: "idx_files_access_level"
+      type: "INDEX"
+      columns: ["access_level"]
+      comment: "访问级别"
+    
+    # 复合业务索引
+    - name: "idx_files_user_type_deleted"
+      type: "INDEX"
+      columns: ["user_id", "file_type", "is_deleted"]
+      comment: "用户文件类型筛选"
+    - name: "idx_files_parent_folder_name"
+      type: "INDEX"
+      columns: ["parent_id", "is_folder", "filename"]
+      comment: "文件夹内容浏览"
+    - name: "idx_files_user_favorite"
+      type: "INDEX"
+      columns: ["user_id", "is_favorite", "updated_at"]
+      comment: "用户收藏文件"
+    
+    # 全文搜索索引
+    - name: "idx_files_fulltext_search"
+      type: "FULLTEXT"
+      columns: ["filename", "description"]
+      comment: "文件名描述全文搜索"
+      options:
+        parser: "ngram"
+
+  # 文件版本管理
+  file_versions:
+    # 版本管理索引
+    - name: "idx_file_versions_file_id"
+      type: "INDEX"
+      columns: ["file_id"]
+      comment: "文件版本查询"
+    - name: "idx_file_versions_version_number"
+      type: "INDEX"
+      columns: ["version_number"]
+      comment: "版本号排序"
+    - name: "idx_file_versions_created_by"
+      type: "INDEX"
+      columns: ["created_by"]
+      comment: "创建者查询"
+    - name: "idx_file_versions_is_milestone"
+      type: "INDEX"
+      columns: ["is_milestone"]
+      comment: "里程碑版本"
+    - name: "idx_file_versions_is_active"
+      type: "INDEX"
+      columns: ["is_active"]
+      comment: "当前版本"
+    - name: "idx_file_versions_created_at"
+      type: "INDEX"
+      columns: ["created_at"]
+      comment: "版本时间"
+    
+    # 完整性索引
+    - name: "idx_file_versions_md5_hash"
+      type: "INDEX"
+      columns: ["md5_hash"]
+      comment: "版本去重"
+    - name: "idx_file_versions_change_type"
+      type: "INDEX"
+      columns: ["change_type"]
+      comment: "变更类型"
+    - name: "idx_file_versions_expires_at"
+      type: "INDEX"
+      columns: ["expires_at"]
+      comment: "版本过期清理"
+    
+    # 复合索引
+    - name: "idx_file_versions_file_active_version"
+      type: "INDEX"
+      columns: ["file_id", "is_active", "version_number DESC"]
+      comment: "文件当前版本查询"
+    - name: "idx_file_versions_file_milestone"
+      type: "INDEX"
+      columns: ["file_id", "is_milestone", "created_at DESC"]
+      comment: "里程碑版本查询"
+    - name: "idx_file_versions_user_versions"
+      type: "INDEX"
+      columns: ["created_by", "created_at DESC"]
+      comment: "用户版本历史"
+
+# 分区表配置
+partitioned_tables:
+  # 按年分区的表
+  operation_logs:
+    partition_type: "RANGE"
+    partition_by: "YEAR(created_at)"
+    partitions:
+      - name: "p2024"
+        value: "2025"
+      - name: "p2025"
+        value: "2026"
+      - name: "p2026"
+        value: "2027"
+      - name: "p_future"
+        value: "MAXVALUE"
+  
+  chat_messages:
+    partition_type: "RANGE"
+    partition_by: "YEAR(created_at)"
+    partitions:
+      - name: "p2024"
+        value: "2025"
+      - name: "p2025"
+        value: "2026"
+      - name: "p2026"
+        value: "2027"
+      - name: "p_future"
+        value: "MAXVALUE"
+  
+  search_logs:
+    partition_type: "RANGE"
+    partition_by: "YEAR(created_at)"
+    partitions:
+      - name: "p2024"
+        value: "2025"
+      - name: "p2025"
+        value: "2026"
+      - name: "p2026"
+        value: "2027"
+      - name: "p_future"
+        value: "MAXVALUE"
+
+# 索引优化规则
+optimization_rules:
+  # 自动索引建议规则
+  auto_index_suggestions:
+    # 扫描行数与返回行数比例过高时建议添加索引
+    scan_ratio_threshold: 100
+    # 查询执行时间超过阈值时建议优化
+    query_time_threshold: 2.0
+    # 索引使用率低于阈值时建议删除
+    usage_threshold: 0.1
+
+  # 索引删除规则
+  index_removal_rules:
+    # 未使用索引的保留天数
+    unused_retention_days: 30
+    # 低使用率索引的最小访问次数
+    min_access_count: 100
+
+# 监控告警配置
+alerts:
+  # 慢查询告警
+  slow_query:
+    enabled: true
+    threshold: 2.0              # 慢查询阈值（秒）
+    max_count_per_hour: 100     # 每小时最大慢查询数量
+  
+  # 未使用索引告警
+  unused_indexes:
+    enabled: true
+    check_interval: "24h"       # 检查间隔
+    max_unused_count: 10        # 最大未使用索引数量
+  
+  # 表碎片告警
+  table_fragmentation:
+    enabled: true
+    threshold: 25.0             # 碎片率阈值（%）
+    check_interval: "168h"      # 检查间隔（7天）
+
+# 执行计划
+execution_plan:
+  # 部署阶段
+  deployment:
+    development:
+      - apply_mysql_config
+      - create_indexes
+      - analyze_tables
+    
+    testing:
+      - performance_test
+      - index_usage_analysis
+      - query_optimization
+    
+    production:
+      - gradual_index_creation
+      - performance_monitoring
+      - maintenance_scheduling
+  
+  # 维护计划
+  maintenance_schedule:
+    daily:
+      - monitor_slow_queries
+      - check_index_usage
+    
+    weekly:
+      - analyze_tables
+      - update_statistics
+      - review_unused_indexes
+    
+    monthly:
+      - optimize_tables
+      - partition_maintenance
+      - performance_review

@@ -2,6 +2,7 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
@@ -16,8 +17,11 @@ import (
 
 // MySQLManager manages MySQL database connections.
 type MySQLManager struct {
-	db     *gorm.DB
-	config config.MySQLConfig
+	db             *gorm.DB
+	config         config.MySQLConfig
+	Pool           *ConnectionPool
+	TransactionMgr *TransactionManager
+	TransactionMon *TransactionMonitor
 }
 
 // NewMySQLConnection creates a new MySQL connection with GORM 1.25.12.
@@ -134,10 +138,26 @@ func NewMySQLManager(cfg *config.MySQLConfig) (*MySQLManager, error) {
 		return nil, err
 	}
 
-	return &MySQLManager{
-		db:     db,
-		config: *cfg,
-	}, nil
+	// Create connection pool
+	pool, err := CreatePoolFromConfig(db, cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create connection pool: %w", err)
+	}
+
+	// Create transaction manager and monitor
+	transactionMgr := NewTransactionManager(db)
+	transactionMon := NewTransactionMonitor()
+
+	manager := &MySQLManager{
+		db:             db,
+		config:         *cfg,
+		Pool:           pool,
+		TransactionMgr: transactionMgr,
+		TransactionMon: transactionMon,
+	}
+
+	log.Printf("MySQL manager initialized with enhanced connection pool and transaction management")
+	return manager, nil
 }
 
 // GetDB returns the GORM database instance.
@@ -145,13 +165,32 @@ func (m *MySQLManager) GetDB() *gorm.DB {
 	return m.db
 }
 
-// Close closes the database connection.
+// Close closes the database connection and pool.
 func (m *MySQLManager) Close() error {
+	var errors []error
+
+	// Close connection pool
+	if m.Pool != nil {
+		if err := m.Pool.Close(); err != nil {
+			errors = append(errors, fmt.Errorf("pool close error: %w", err))
+		}
+	}
+
+	// Close database connection
 	sqlDB, err := m.db.DB()
 	if err != nil {
-		return err
+		errors = append(errors, fmt.Errorf("get sql.DB error: %w", err))
+	} else {
+		if err := sqlDB.Close(); err != nil {
+			errors = append(errors, fmt.Errorf("sql.DB close error: %w", err))
+		}
 	}
-	return sqlDB.Close()
+
+	if len(errors) > 0 {
+		return fmt.Errorf("mysql close errors: %v", errors)
+	}
+
+	return nil
 }
 
 // Health checks the database health.
@@ -165,9 +204,51 @@ func (m *MySQLManager) Health() error {
 
 // GetStats returns database connection statistics.
 func (m *MySQLManager) GetStats() interface{} {
+	if m.Pool != nil {
+		return m.Pool.GetMetrics()
+	}
+
 	sqlDB, err := m.db.DB()
 	if err != nil {
 		return nil
 	}
 	return sqlDB.Stats()
+}
+
+// GetConnectionPool returns the connection pool instance.
+func (m *MySQLManager) GetConnectionPool() *ConnectionPool {
+	return m.Pool
+}
+
+// GetTransactionManager returns the transaction manager instance.
+func (m *MySQLManager) GetTransactionManager() *TransactionManager {
+	return m.TransactionMgr
+}
+
+// GetTransactionMonitor returns the transaction monitor instance.
+func (m *MySQLManager) GetTransactionMonitor() *TransactionMonitor {
+	return m.TransactionMon
+}
+
+// ExecuteWithTransaction executes a function within a transaction.
+func (m *MySQLManager) ExecuteWithTransaction(ctx context.Context, fn func(*gorm.DB) error) error {
+	return m.TransactionMgr.WithTransactionMonitoring(ctx, m.TransactionMon, fn)
+}
+
+// ExecuteWithRetry executes a function with retry logic.
+func (m *MySQLManager) ExecuteWithRetry(fn func(*gorm.DB) error) error {
+	return m.Pool.ExecuteWithRetry(fn)
+}
+
+// ExecuteWithTimeout executes a function with timeout.
+func (m *MySQLManager) ExecuteWithTimeout(timeout time.Duration, fn func(*gorm.DB) error) error {
+	return m.Pool.ExecuteWithTimeout(timeout, fn)
+}
+
+// IsPoolHealthy returns whether the connection pool is healthy.
+func (m *MySQLManager) IsPoolHealthy() bool {
+	if m.Pool != nil {
+		return m.Pool.IsHealthy()
+	}
+	return false
 }
