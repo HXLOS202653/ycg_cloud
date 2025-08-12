@@ -746,6 +746,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		// If JSON binding fails, continue to try header-based refresh token
 		// This allows flexible token refresh from both body and header
+		fmt.Printf("JSON binding failed for refresh token request, trying header: %v\n", err)
 	}
 
 	if req.RefreshToken == "" {
@@ -762,6 +763,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		if err := h.db.Where("user_id = ? AND refresh_token = ?", userID, req.RefreshToken).First(&session).Error; err == nil {
 			if err := h.sessionService.InvalidateSession(session.SessionToken); err != nil {
 				// Log error but continue logout process
+				fmt.Printf("Failed to invalidate specific session during logout: %v\n", err)
 			}
 		}
 	} else {
@@ -769,6 +771,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		if userIDInt, ok := userID.(int64); ok {
 			if err := h.sessionService.InvalidateAllUserSessions(userIDInt); err != nil {
 				// Log error but continue logout process
+				fmt.Printf("Failed to invalidate all user sessions during logout: %v\n", err)
 			}
 		}
 	}
