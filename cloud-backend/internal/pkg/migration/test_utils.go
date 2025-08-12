@@ -97,7 +97,7 @@ func CreateTestMongoMigration(t *testing.T, dir, version, name, script string) {
 
 	// Create migration file
 	migrationFile := filepath.Join(migrationDir, fmt.Sprintf("%s_%s.js", version, name))
-	err = os.WriteFile(migrationFile, []byte(script), 0644)
+	err = os.WriteFile(migrationFile, []byte(script), 0600)
 	require.NoError(t, err)
 }
 

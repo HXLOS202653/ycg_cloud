@@ -52,7 +52,7 @@ func (g *Generator) GenerateMySQLMigration(name, description string) error {
 	// 生成up文件
 	upFile := filepath.Join(g.migrationsDir, "mysql", fmt.Sprintf("%s_%s.up.sql", version, name))
 	if err := g.generateFromTemplate("mysql_up.tmpl", upFile, data); err != nil {
-		return fmt.Errorf("生成up文件失败: %v", err)
+		return fmt.Errorf("生成up文件失败: %w", err)
 	}
 
 	// 生成down文件
@@ -60,7 +60,7 @@ func (g *Generator) GenerateMySQLMigration(name, description string) error {
 	if err := g.generateFromTemplate("mysql_down.tmpl", downFile, data); err != nil {
 		// 如果down文件生成失败，删除已生成的up文件
 		_ = os.Remove(upFile)
-		return fmt.Errorf("生成down文件失败: %v", err)
+		return fmt.Errorf("生成down文件失败: %w", err)
 	}
 
 	fmt.Printf("✅ 成功生成MySQL迁移文件:\n")
@@ -103,13 +103,25 @@ func (g *Generator) generateFromTemplate(templateName, outputFile string, data i
 		var err error
 		outputFile, err = filepath.Abs(outputFile)
 		if err != nil {
-			return fmt.Errorf("获取文件绝对路径失败: %v", err)
+			return fmt.Errorf("获取文件绝对路径失败: %w", err)
 		}
+	}
+
+	// 清理路径，防止路径遍历攻击
+	outputFile = filepath.Clean(outputFile)
+
+	// 确保文件路径在预期的迁移目录内
+	migrationDir, err := filepath.Abs(g.migrationsDir)
+	if err != nil {
+		return fmt.Errorf("获取迁移目录绝对路径失败: %w", err)
+	}
+	if !strings.HasPrefix(outputFile, migrationDir) {
+		return fmt.Errorf("文件路径不在允许的迁移目录内: %s", outputFile)
 	}
 
 	// 确保输出目录存在
 	if err := os.MkdirAll(filepath.Dir(outputFile), 0o750); err != nil {
-		return fmt.Errorf("创建目录失败: %v", err)
+		return fmt.Errorf("创建目录失败: %w", err)
 	}
 
 	// 读取模板文件
@@ -127,13 +139,13 @@ func (g *Generator) generateFromTemplate(templateName, outputFile string, data i
 	// 创建输出文件 #nosec G304 -- 路径已验证
 	file, err := os.Create(outputFile)
 	if err != nil {
-		return fmt.Errorf("创建文件失败: %v", err)
+		return fmt.Errorf("创建文件失败: %w", err)
 	}
 	defer func() { _ = file.Close() }()
 
 	// 执行模板
 	if err := tmpl.Execute(file, data); err != nil {
-		return fmt.Errorf("执行模板失败: %v", err)
+		return fmt.Errorf("执行模板失败: %w", err)
 	}
 
 	return nil
@@ -143,7 +155,22 @@ func (g *Generator) generateFromTemplate(templateName, outputFile string, data i
 func (g *Generator) getTemplateContent(templateName string) (string, error) {
 	// 首先尝试从文件系统读取
 	templatePath := filepath.Join(g.templateDir, templateName)
-	if content, err := os.ReadFile(templatePath); err == nil { // #nosec G304 -- 路径由可信配置提供
+
+	// 验证模板路径安全性
+	templatePath = filepath.Clean(templatePath)
+	templateDir, err := filepath.Abs(g.templateDir)
+	if err != nil {
+		return "", fmt.Errorf("获取模板目录绝对路径失败: %w", err)
+	}
+	absTemplatePath, err := filepath.Abs(templatePath)
+	if err != nil {
+		return "", fmt.Errorf("获取模板文件绝对路径失败: %w", err)
+	}
+	if !strings.HasPrefix(absTemplatePath, templateDir) {
+		return "", fmt.Errorf("模板文件路径不在允许的目录内: %s", templatePath)
+	}
+
+	if content, err := os.ReadFile(templatePath); err == nil { // #nosec G304 -- 路径已验证安全
 		return string(content), nil
 	}
 

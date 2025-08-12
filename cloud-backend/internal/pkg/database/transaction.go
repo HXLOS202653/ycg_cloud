@@ -78,7 +78,7 @@ func (tm *TransactionManager) WithTransactionOptions(ctx context.Context, opts *
 		// Rollback on error
 		if rbErr := tx.Rollback().Error; rbErr != nil {
 			log.Printf("Failed to rollback transaction: %v", rbErr)
-			return fmt.Errorf("transaction error: %w, rollback error: %v", err, rbErr)
+			return fmt.Errorf("transaction error: %w, rollback error: %w", err, rbErr)
 		}
 		return err
 	}

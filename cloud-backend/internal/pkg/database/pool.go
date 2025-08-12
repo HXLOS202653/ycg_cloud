@@ -15,8 +15,9 @@ import (
 )
 
 const (
-	// Pool status constants
-	PoolStatusHealthy  = "healthy"
+	// PoolStatusHealthy indicates the connection pool is operating normally
+	PoolStatusHealthy = "healthy"
+	// PoolStatusDegraded indicates the connection pool is experiencing issues
 	PoolStatusDegraded = "degraded"
 )
 

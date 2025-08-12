@@ -176,16 +176,13 @@ func scanMySQLMigrations(dir string) ([]*MySQLMigration, error) {
 		return nil, err
 	}
 
-	migrationsMap, err := parseMySQLMigrationFiles(files, dir)
-	if err != nil {
-		return nil, err
-	}
+	migrationsMap := parseMySQLMigrationFiles(files, dir)
 
 	return convertMySQLMigrationsToSlice(migrationsMap), nil
 }
 
 // parseMySQLMigrationFiles 解析MySQL迁移文件
-func parseMySQLMigrationFiles(files []os.DirEntry, dir string) (map[string]*MySQLMigration, error) {
+func parseMySQLMigrationFiles(files []os.DirEntry, dir string) map[string]*MySQLMigration {
 	migrationsMap := make(map[string]*MySQLMigration)
 
 	for _, file := range files {
@@ -208,7 +205,7 @@ func parseMySQLMigrationFiles(files []os.DirEntry, dir string) (map[string]*MySQ
 		}
 	}
 
-	return migrationsMap, nil
+	return migrationsMap
 }
 
 // parseSingleMySQLMigrationFile 解析单个MySQL迁移文件
@@ -255,12 +252,12 @@ func parseSingleMySQLMigrationFile(filename, dir string) (*MySQLMigration, error
 }
 
 // mergeMySQLMigrationFiles 合并MySQL迁移文件信息
-func mergeMySQLMigrationFiles(existing, new *MySQLMigration) {
-	if new.UpFile != "" {
-		existing.UpFile = new.UpFile
+func mergeMySQLMigrationFiles(existing, newer *MySQLMigration) {
+	if newer.UpFile != "" {
+		existing.UpFile = newer.UpFile
 	}
-	if new.DownFile != "" {
-		existing.DownFile = new.DownFile
+	if newer.DownFile != "" {
+		existing.DownFile = newer.DownFile
 	}
 }
 

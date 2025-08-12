@@ -410,7 +410,12 @@ func (r *Runner) filterAppliedMigrations(records []*MySQLMigrationRecord, target
 
 // filterMongoMigrations 过滤MongoDB迁移
 func (r *Runner) filterMongoMigrations(migrations []*MongoDBMigration, targetVersion string, steps int, _ Direction) []*MongoDBMigration {
-	var filtered []*MongoDBMigration
+	// 预分配切片容量以提高性能
+	capacity := len(migrations)
+	if steps > 0 && steps < capacity {
+		capacity = steps
+	}
+	filtered := make([]*MongoDBMigration, 0, capacity)
 
 	for _, mig := range migrations {
 		if targetVersion != "" && mig.Version > targetVersion {
@@ -470,14 +475,28 @@ func (r *Runner) rollbackMySQLMigration(record *MySQLMigrationRecord) error {
 	mysqlDir := filepath.Join(r.migrationsDir, "mysql")
 	downFile := filepath.Join(mysqlDir, fmt.Sprintf("%s_%s.down.sql", record.Version, record.Name))
 
-	downSQL, err := os.ReadFile(downFile)
+	// 验证文件路径安全性
+	downFile = filepath.Clean(downFile)
+	migrationDir, err := filepath.Abs(r.migrationsDir)
 	if err != nil {
-		return fmt.Errorf("读取down文件失败: %v", err)
+		return fmt.Errorf("获取迁移目录绝对路径失败: %w", err)
+	}
+	absDownFile, err := filepath.Abs(downFile)
+	if err != nil {
+		return fmt.Errorf("获取down文件绝对路径失败: %w", err)
+	}
+	if !strings.HasPrefix(absDownFile, migrationDir) {
+		return fmt.Errorf("down文件路径不在允许的迁移目录内: %s", downFile)
+	}
+
+	downSQL, err := os.ReadFile(downFile) // #nosec G304 -- 路径已验证安全
+	if err != nil {
+		return fmt.Errorf("读取down文件失败: %w", err)
 	}
 
 	// 执行回滚SQL
 	if err := r.executeSQLStatements(string(downSQL)); err != nil {
-		return fmt.Errorf("执行回滚SQL失败: %v", err)
+		return fmt.Errorf("执行回滚SQL失败: %w", err)
 	}
 
 	// 删除迁移记录

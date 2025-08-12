@@ -124,14 +124,14 @@ func TestConnectionPool_ExecuteWithTimeout(t *testing.T) {
 	defer func() { _ = pool.Close() }()
 
 	// Test successful execution within timeout
-	err = pool.ExecuteWithTimeout(1*time.Second, func(db *gorm.DB) error {
+	err = pool.ExecuteWithTimeout(1*time.Second, func(_ *gorm.DB) error {
 		time.Sleep(100 * time.Millisecond)
 		return nil
 	})
 	assert.NoError(t, err)
 
 	// Test timeout scenario
-	err = pool.ExecuteWithTimeout(100*time.Millisecond, func(db *gorm.DB) error {
+	err = pool.ExecuteWithTimeout(100*time.Millisecond, func(_ *gorm.DB) error {
 		time.Sleep(200 * time.Millisecond)
 		return nil
 	})

@@ -488,7 +488,12 @@ func (mt *MigrationTool) convertToSortedSlice(migrationsMap map[string]*Migratio
 
 // filterMigrationsForUp 过滤需要向上迁移的文件
 func (mt *MigrationTool) filterMigrationsForUp(migrations []*MigrationFile, targetVersion string, steps int) []*MigrationFile {
-	var filtered []*MigrationFile
+	// 预分配切片容量以提高性能
+	capacity := len(migrations)
+	if steps > 0 && steps < capacity {
+		capacity = steps
+	}
+	filtered := make([]*MigrationFile, 0, capacity)
 
 	for _, migration := range migrations {
 		// 如果指定了目标版本，只迁移到该版本

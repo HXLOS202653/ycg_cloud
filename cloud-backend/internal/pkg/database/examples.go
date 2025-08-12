@@ -51,7 +51,7 @@ func ExampleBasicTransaction(manager *MySQLManager) {
 	ctx := context.Background()
 	transactionMgr := manager.GetTransactionManager()
 
-	err := transactionMgr.WithTransaction(ctx, func(tx *gorm.DB) error {
+	err := transactionMgr.WithTransaction(ctx, func(_ *gorm.DB) error {
 		// Simulate some database operations
 		log.Println("Performing database operations within transaction...")
 
@@ -91,7 +91,7 @@ func ExampleTransactionWithOptions(manager *MySQLManager) {
 		Timeout:   10 * time.Second,
 	}
 
-	err := transactionMgr.WithTransactionOptions(ctx, opts, func(tx *gorm.DB) error {
+	err := transactionMgr.WithTransactionOptions(ctx, opts, func(_ *gorm.DB) error {
 		log.Println("Performing operations with repeatable read isolation...")
 
 		// Simulate operations that require consistent reads
@@ -120,7 +120,7 @@ func ExampleBatchOperations(manager *MySQLManager) {
 	operations := make([]func(*gorm.DB) error, 500)
 	for i := 0; i < len(operations); i++ {
 		operationID := i
-		operations[i] = func(tx *gorm.DB) error {
+		operations[i] = func(_ *gorm.DB) error {
 			// Simulate a database operation
 			log.Printf("Processing operation %d", operationID)
 			time.Sleep(10 * time.Millisecond)
@@ -286,7 +286,7 @@ func ExampleTimeoutOperations(manager *MySQLManager) {
 	log.Println("=== Example: Timeout Operations ===")
 
 	// Execute operation with timeout
-	err := manager.ExecuteWithTimeout(2*time.Second, func(db *gorm.DB) error {
+	err := manager.ExecuteWithTimeout(2*time.Second, func(_ *gorm.DB) error {
 		log.Println("Starting operation with 2-second timeout...")
 
 		// Simulate long-running operation
