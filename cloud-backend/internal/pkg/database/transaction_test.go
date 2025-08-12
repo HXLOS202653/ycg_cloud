@@ -397,7 +397,7 @@ func BenchmarkTransactionManager_WithTransaction(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			_ = tm.WithTransaction(ctx, func(tx *gorm.DB) error {
+			_ = tm.WithTransaction(ctx, func(_ *gorm.DB) error {
 				// Simulate lightweight operation
 				return nil
 			})

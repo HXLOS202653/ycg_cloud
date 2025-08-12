@@ -130,7 +130,7 @@ func (r *Runner) runMySQLUp(targetVersion string, steps int) error {
 		}
 		duration := time.Since(startTime)
 
-		fmt.Printf("✅ MySQL迁移 %s_%s 执行成功 (耗时: %w)\n", mig.Version, mig.Name, duration)
+		fmt.Printf("✅ MySQL迁移 %s_%s 执行成功 (耗时: %v)\n", mig.Version, mig.Name, duration)
 		r.logger.WithFields(logrus.Fields{
 			"migration_version": mig.Version,
 			"migration_name":    mig.Name,
@@ -183,7 +183,7 @@ func (r *Runner) runMySQLDown(targetVersion string, steps int) error {
 		}
 		duration := time.Since(startTime)
 
-		fmt.Printf("✅ MySQL迁移 %s_%s 回滚成功 (耗时: %w)\n", record.Version, record.Name, duration)
+		fmt.Printf("✅ MySQL迁移 %s_%s 回滚成功 (耗时: %v)\n", record.Version, record.Name, duration)
 	}
 
 	fmt.Printf("\n🎉 成功回滚了 %d 个MySQL迁移\n", len(toRollback))
@@ -236,7 +236,7 @@ func (r *Runner) runMongoDBUp(targetVersion string, steps int) error {
 		}
 		duration := time.Since(startTime)
 
-		fmt.Printf("✅ MongoDB迁移 %s_%s 执行成功 (耗时: %w)\n", mig.Version, mig.Name, duration)
+		fmt.Printf("✅ MongoDB迁移 %s_%s 执行成功 (耗时: %v)\n", mig.Version, mig.Name, duration)
 	}
 
 	fmt.Printf("\n🎉 成功执行了 %d 个MongoDB迁移\n", len(toExecute))
@@ -597,7 +597,7 @@ func (r *Runner) getSQLFileByDirection(mig *MySQLMigration, direction Direction)
 func (r *Runner) previewSQLFileContent(sqlFile string) {
 	content, err := os.ReadFile(sqlFile) // #nosec G304 -- 路径已验证安全
 	if err != nil {
-		fmt.Printf("   读取文件失败: %w\n", err)
+		fmt.Printf("   读取文件失败: %v\n", err)
 		return
 	}
 

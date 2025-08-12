@@ -37,7 +37,7 @@ func NewManager(cfg *config.DatabaseConfig) (*Manager, error) {
 		if closeErr := mysqlManager.Close(); closeErr != nil {
 			log.Printf("Failed to close MySQL connection during MongoDB init failure: %v", closeErr)
 		}
-		return nil, fmt.Errorf("failed to initialize MongoDB: %v", err)
+		return nil, fmt.Errorf("failed to initialize MongoDB: %w", err)
 	}
 
 	// Initialize Redis 7.0+
@@ -51,7 +51,7 @@ func NewManager(cfg *config.DatabaseConfig) (*Manager, error) {
 		if closeErr := mongoManager.Close(); closeErr != nil {
 			log.Printf("Failed to close MongoDB connection during Redis init failure: %v", closeErr)
 		}
-		return nil, fmt.Errorf("failed to initialize Redis: %v", err)
+		return nil, fmt.Errorf("failed to initialize Redis: %w", err)
 	}
 
 	manager := &Manager{

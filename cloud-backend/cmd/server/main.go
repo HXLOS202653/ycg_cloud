@@ -18,13 +18,13 @@ func main() {
 	// Load configuration
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		log.Fatalf("Failed to load configuration: %w", err)
+		log.Fatalf("Failed to load configuration: %v", err)
 	}
 
 	// Create and start the server
 	server, err := app.NewServer(cfg)
 	if err != nil {
-		log.Fatalf("Failed to create server: %w", err)
+		log.Fatalf("Failed to create server: %v", err)
 	}
 
 	// Configure HTTP server
@@ -40,7 +40,7 @@ func main() {
 	go func() {
 		log.Printf("Starting server on %s", cfg.Server.Port)
 		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Failed to start server: %w", err)
+			log.Fatalf("Failed to start server: %v", err)
 		}
 	}()
 
@@ -56,14 +56,14 @@ func main() {
 
 	// Shutdown the HTTP server
 	if err := httpServer.Shutdown(ctx); err != nil {
-		log.Printf("Server forced to shutdown: %w", err)
+		log.Printf("Server forced to shutdown: %v", err)
 		// Let defer cancel() run naturally
 		return
 	}
 
 	// Close database connections
 	if err := server.Close(); err != nil {
-		log.Printf("Error closing server resources: %w", err)
+		log.Printf("Error closing server resources: %v", err)
 	}
 
 	log.Println("Server exited")

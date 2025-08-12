@@ -303,7 +303,7 @@ func BenchmarkConnectionPool_ExecuteWithRetry(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			_ = pool.ExecuteWithRetry(func(db *gorm.DB) error {
+			_ = pool.ExecuteWithRetry(func(_ *gorm.DB) error {
 				// Always succeed for benchmark
 				return nil
 			})

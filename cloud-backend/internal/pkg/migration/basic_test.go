@@ -126,7 +126,7 @@ func TestCreateTestMongoMigration(t *testing.T) {
 	assert.FileExists(t, file)
 
 	// Check file content
-	content, err := os.ReadFile(file)
+	content, err := os.ReadFile(file) // #nosec G304 -- file path is controlled in test context
 	require.NoError(t, err)
 	assert.Equal(t, script, string(content))
 }
