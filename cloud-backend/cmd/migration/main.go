@@ -61,8 +61,8 @@ func NewMigrationTool(dsn, migrationsDir string, verbose, dryRun bool) (*Migrati
 	}, nil
 }
 
-func main() {
-	// 设置根命令
+// newRootCmd 创建并配置根命令
+func newRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "migration",
 		Short: "网络云盘系统数据库迁移工具",
@@ -95,7 +95,12 @@ func main() {
 	rootCmd.PersistentFlags().BoolVar(dryRun, "dry-run", false, "预览模式，不实际执行")
 	rootCmd.PersistentFlags().BoolVar(force, "force", false, "强制执行迁移")
 
-	// up 命令 - 执行迁移
+	return rootCmd
+}
+
+// newUpCmd 创建 up 命令
+func newUpCmd() *cobra.Command {
+
 	upCmd := &cobra.Command{
 		Use:   "up",
 		Short: "执行数据库迁移",
@@ -126,7 +131,12 @@ func main() {
 	upCmd.Flags().StringVar(version, "version", "", "迁移到指定版本")
 	upCmd.Flags().IntVar(steps, "steps", 0, "执行指定步数的迁移")
 
-	// down 命令 - 回滚迁移
+	return upCmd
+}
+
+// newDownCmd 创建 down 命令
+func newDownCmd() *cobra.Command {
+
 	downCmd := &cobra.Command{
 		Use:   "down",
 		Short: "回滚数据库迁移",
@@ -154,7 +164,12 @@ func main() {
 	downCmd.Flags().StringVar(version, "version", "", "回滚到指定版本")
 	downCmd.Flags().IntVar(steps, "steps", 1, "回滚指定步数")
 
-	// status 命令 - 查看迁移状态
+	return downCmd
+}
+
+// newStatusCmd 创建 status 命令
+func newStatusCmd() *cobra.Command {
+
 	statusCmd := &cobra.Command{
 		Use:   "status",
 		Short: "查看数据库迁移状态",
@@ -172,7 +187,12 @@ func main() {
 		},
 	}
 
-	// create 命令 - 创建迁移文件
+	return statusCmd
+}
+
+// newCreateCmd 创建 create 命令
+func newCreateCmd() *cobra.Command {
+
 	createCmd := &cobra.Command{
 		Use:   "create [name]",
 		Short: "创建新的迁移文件",
@@ -197,7 +217,12 @@ func main() {
 		},
 	}
 
-	// version 命令 - 显示版本信息
+	return createCmd
+}
+
+// newVersionCmd 创建 version 命令
+func newVersionCmd() *cobra.Command {
+
 	versionCmd := &cobra.Command{
 		Use:   "version",
 		Short: "显示工具版本信息",
@@ -208,8 +233,21 @@ func main() {
 		},
 	}
 
+	return versionCmd
+}
+
+func main() {
+	// 创建根命令
+	rootCmd := newRootCmd()
+
 	// 添加子命令
-	rootCmd.AddCommand(upCmd, downCmd, statusCmd, createCmd, versionCmd)
+	rootCmd.AddCommand(
+		newUpCmd(),
+		newDownCmd(),
+		newStatusCmd(),
+		newCreateCmd(),
+		newVersionCmd(),
+	)
 
 	// 执行命令
 	if err := rootCmd.Execute(); err != nil {
