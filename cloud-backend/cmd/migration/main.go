@@ -246,10 +246,10 @@ func validateMigrationName(name string) error {
 
 	// 检查是否包含特殊字符
 	for _, char := range name {
-		if !((char >= 'a' && char <= 'z') ||
-			(char >= 'A' && char <= 'Z') ||
-			(char >= '0' && char <= '9') ||
-			char == '_') {
+		if (char < 'a' || char > 'z') &&
+			(char < 'A' || char > 'Z') &&
+			(char < '0' || char > '9') &&
+			char != '_' {
 			return fmt.Errorf("迁移名称只能包含字母、数字和下划线")
 		}
 	}

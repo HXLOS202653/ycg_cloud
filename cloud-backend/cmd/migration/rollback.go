@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -45,7 +44,7 @@ func (rm *RollbackManager) ValidateRollback(targetVersion string, steps int) ([]
 	// 过滤需要回滚的迁移
 	toRollback := rm.tool.filterMigrationsForDown(appliedMigrations, targetVersion, steps)
 
-	var rollbackInfos []*RollbackInfo
+	rollbackInfos := make([]*RollbackInfo, 0, len(toRollback))
 	for _, record := range toRollback {
 		info := &RollbackInfo{
 			Version:     record.Version,
@@ -71,12 +70,22 @@ func (rm *RollbackManager) ValidateRollback(targetVersion string, steps int) ([]
 func (rm *RollbackManager) analyzeRollbackSafety(info *RollbackInfo) error {
 	sql := info.RollbackSQL
 
-	// 检查是否包含危险操作
+	// 检查极其危险的操作 - 应该阻止回滚
+	criticalDangerousOps := []string{
+		"DROP DATABASE",
+		"TRUNCATE",
+	}
+
+	for _, operation := range criticalDangerousOps {
+		if containsIgnoreCase(sql, operation) {
+			return fmt.Errorf("回滚包含极其危险的操作 '%s'，为了数据安全已阻止执行", operation)
+		}
+	}
+
+	// 检查一般危险操作 - 标记但允许继续
 	dangerousOperations := []string{
 		"DROP TABLE",
-		"DROP DATABASE",
 		"DELETE FROM",
-		"TRUNCATE",
 		"DROP COLUMN",
 		"DROP INDEX",
 	}
@@ -114,6 +123,11 @@ func (rm *RollbackManager) analyzeRollbackSafety(info *RollbackInfo) error {
 				"⚠️  涉及数据类型变更 - 可能导致数据兼容性问题")
 			break
 		}
+	}
+
+	// 如果SQL为空，这可能是一个问题
+	if strings.TrimSpace(sql) == "" {
+		return fmt.Errorf("回滚SQL为空，无法执行安全分析")
 	}
 
 	return nil
@@ -294,7 +308,7 @@ func (rm *RollbackManager) createRollbackBackup() error {
 
 `, time.Now().Format("2006-01-02 15:04:05"), backupFile)
 
-	if err := ioutil.WriteFile(backupFile, []byte(backupInfo), 0644); err != nil {
+	if err := os.WriteFile(backupFile, []byte(backupInfo), 0644); err != nil {
 		return fmt.Errorf("创建备份标记文件失败: %v", err)
 	}
 

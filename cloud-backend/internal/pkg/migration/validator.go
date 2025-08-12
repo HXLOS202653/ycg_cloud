@@ -74,10 +74,10 @@ func (v *Validator) validateMigrationName(name string) error {
 
 	// Check for special characters (same logic as main.go)
 	for _, char := range name {
-		if !((char >= 'a' && char <= 'z') ||
-			(char >= 'A' && char <= 'Z') ||
-			(char >= '0' && char <= '9') ||
-			char == '_') {
+		if (char < 'a' || char > 'z') &&
+			(char < 'A' || char > 'Z') &&
+			(char < '0' || char > '9') &&
+			char != '_' {
 			return fmt.Errorf("migration name can only contain letters, numbers and underscores")
 		}
 	}

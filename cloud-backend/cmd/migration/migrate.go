@@ -348,6 +348,7 @@ func (mt *MigrationTool) getAllMigrations() ([]*MigrationFile, error) {
 // parseMigrationFiles 解析迁移文件并构建映射
 func (mt *MigrationTool) parseMigrationFiles(files []os.DirEntry, mysqlDir string) (map[string]*MigrationFile, error) {
 	migrationsMap := make(map[string]*MigrationFile)
+	var invalidFiles []string
 
 	for _, file := range files {
 		if file.IsDir() {
@@ -361,11 +362,36 @@ func (mt *MigrationTool) parseMigrationFiles(files []os.DirEntry, mysqlDir strin
 
 		migrationInfo, err := mt.parseMigrationFilename(filename)
 		if err != nil {
-			continue // 跳过无效文件
+			invalidFiles = append(invalidFiles, filename)
+			continue // 跳过无效文件，但记录
+		}
+
+		// 检查是否有重复的迁移版本和名称但方向不同的情况
+		if existing, exists := migrationsMap[migrationInfo.version]; exists {
+			if existing.Name != migrationInfo.name {
+				return nil, fmt.Errorf("版本 %s 存在不同的迁移名称: '%s' 和 '%s'",
+					migrationInfo.version, existing.Name, migrationInfo.name)
+			}
 		}
 
 		migration := mt.getOrCreateMigration(migrationsMap, migrationInfo.version, migrationInfo.name)
-		mt.setMigrationFile(migration, migrationInfo.direction, filepath.Join(mysqlDir, filename))
+
+		// 检查是否重复设置相同方向的文件
+		filePath := filepath.Join(mysqlDir, filename)
+		if err := mt.validateAndSetMigrationFile(migration, migrationInfo.direction, filePath); err != nil {
+			return nil, fmt.Errorf("设置迁移文件失败 %s: %w", filename, err)
+		}
+	}
+
+	// 如果有太多无效文件，可能表明目录配置错误
+	if len(invalidFiles) > len(files)/2 {
+		return nil, fmt.Errorf("发现过多无效的迁移文件 (%d/%d): %v",
+			len(invalidFiles), len(files), invalidFiles)
+	}
+
+	// 记录无效文件但不中断
+	if len(invalidFiles) > 0 && mt.verbose {
+		fmt.Printf("Warning: 跳过 %d 个无效的迁移文件: %v\n", len(invalidFiles), invalidFiles)
 	}
 
 	return migrationsMap, nil
@@ -423,14 +449,23 @@ func (mt *MigrationTool) getOrCreateMigration(migrationsMap map[string]*Migratio
 	return migration
 }
 
-// setMigrationFile 设置迁移文件路径
-func (mt *MigrationTool) setMigrationFile(migration *MigrationFile, direction, filePath string) {
+// validateAndSetMigrationFile 验证并设置迁移文件路径
+func (mt *MigrationTool) validateAndSetMigrationFile(migration *MigrationFile, direction, filePath string) error {
 	switch direction {
 	case "up":
+		if migration.UpFile != "" {
+			return fmt.Errorf("重复的up迁移文件: 已存在 %s，尝试设置 %s", migration.UpFile, filePath)
+		}
 		migration.UpFile = filePath
 	case "down":
+		if migration.DownFile != "" {
+			return fmt.Errorf("重复的down迁移文件: 已存在 %s，尝试设置 %s", migration.DownFile, filePath)
+		}
 		migration.DownFile = filePath
+	default:
+		return fmt.Errorf("无效的迁移方向: %s", direction)
 	}
+	return nil
 }
 
 // convertToSortedSlice 转换为排序的切片
@@ -474,7 +509,7 @@ func (mt *MigrationTool) filterMigrationsForUp(migrations []*MigrationFile, targ
 
 // filterMigrationsForDown 过滤需要向下迁移的记录
 func (mt *MigrationTool) filterMigrationsForDown(records []*MigrationRecord, targetVersion string, steps int) []*MigrationRecord {
-	var filtered []*MigrationRecord
+	filtered := make([]*MigrationRecord, 0, len(records))
 
 	for _, record := range records {
 		// 如果指定了目标版本，只回滚到该版本之后的迁移

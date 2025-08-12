@@ -1,3 +1,5 @@
+// Package database provides database configuration and index management functionality.
+// It includes index strategies, monitoring, and optimization features for database performance.
 package database
 
 import (
@@ -181,28 +183,41 @@ func (s *CoreTableIndexStrategy) ApplyIndexes(db *gorm.DB) error {
 
 // applyMySQLConfig 应用MySQL配置
 func (s *CoreTableIndexStrategy) applyMySQLConfig(db *gorm.DB) error {
-	configs := []string{
-		fmt.Sprintf("SET GLOBAL ft_min_word_len = %d", s.config.FullTextConfig.MinWordLength),
-		fmt.Sprintf("SET GLOBAL ngram_token_size = %d", s.config.FullTextConfig.NgramTokenSize),
-		fmt.Sprintf("SET GLOBAL ft_query_expansion_limit = %d", s.config.FullTextConfig.QueryExpansionLimit),
-		fmt.Sprintf("SET GLOBAL ft_boolean_syntax = '%s'", s.config.FullTextConfig.BooleanSyntax),
+	// 关键配置 - 失败时应该返回错误
+	criticalConfigs := []string{
 		"SET GLOBAL innodb_stats_persistent = ON",
 		"SET GLOBAL innodb_stats_auto_recalc = ON",
 		"SET GLOBAL optimizer_switch = 'index_merge=on,index_merge_union=on,index_merge_sort_union=on,index_merge_intersection=on'",
 	}
 
+	// 可选配置 - 失败时只记录警告
+	optionalConfigs := []string{
+		fmt.Sprintf("SET GLOBAL ft_min_word_len = %d", s.config.FullTextConfig.MinWordLength),
+		fmt.Sprintf("SET GLOBAL ngram_token_size = %d", s.config.FullTextConfig.NgramTokenSize),
+		fmt.Sprintf("SET GLOBAL ft_query_expansion_limit = %d", s.config.FullTextConfig.QueryExpansionLimit),
+		fmt.Sprintf("SET GLOBAL ft_boolean_syntax = '%s'", s.config.FullTextConfig.BooleanSyntax),
+	}
+
 	if s.config.MonitoringConfig.EnableSlowQueryLog {
-		configs = append(configs, []string{
+		optionalConfigs = append(optionalConfigs, []string{
 			"SET GLOBAL slow_query_log = ON",
 			fmt.Sprintf("SET GLOBAL long_query_time = %.1f", s.config.MonitoringConfig.SlowQueryThreshold),
 			"SET GLOBAL log_queries_not_using_indexes = ON",
 		}...)
 	}
 
-	for _, config := range configs {
+	// 应用关键配置
+	for _, config := range criticalConfigs {
+		if err := db.Exec(config).Error; err != nil {
+			return fmt.Errorf("failed to apply critical MySQL config '%s': %w", config, err)
+		}
+	}
+
+	// 应用可选配置
+	for _, config := range optionalConfigs {
 		if err := db.Exec(config).Error; err != nil {
 			// 某些配置可能需要特殊权限，记录警告但不中断
-			fmt.Printf("Warning: Failed to apply config '%s': %v\n", config, err)
+			fmt.Printf("Warning: Failed to apply optional config '%s': %v\n", config, err)
 		}
 	}
 
@@ -633,7 +648,7 @@ func (s *CoreTableIndexStrategy) analyzeSlowQueries(db *gorm.DB, result *IndexAn
 
 // generateRecommendations 生成优化建议
 func (s *CoreTableIndexStrategy) generateRecommendations(result *IndexAnalysisResult) {
-	var recommendations []IndexRecommendation
+	recommendations := make([]IndexRecommendation, 0, 10) // 预分配合理容量
 
 	// 建议删除未使用的索引
 	for _, unusedIndex := range result.UnusedIndexes {

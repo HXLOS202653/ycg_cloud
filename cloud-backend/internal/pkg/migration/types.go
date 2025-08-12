@@ -53,8 +53,8 @@ type MongoDBMigration struct {
 	Applied bool   `json:"applied"`
 }
 
-// MigrationStatus 迁移状态
-type MigrationStatus struct {
+// Status 迁移状态
+type Status struct {
 	Database      string                  `json:"database"`
 	MySQLStatus   *MySQLMigrationStatus   `json:"mysql_status"`
 	MongoDBStatus *MongoDBMigrationStatus `json:"mongodb_status"`
@@ -79,8 +79,8 @@ type MongoDBMigrationStatus struct {
 	Migrations        []*MongoDBMigration     `json:"migrations"`
 }
 
-// MigrationConfig 迁移配置
-type MigrationConfig struct {
+// Config 迁移配置
+type Config struct {
 	MigrationsDir string                  `json:"migrations_dir" yaml:"migrations_dir"`
 	MySQL         *MySQLMigrationConfig   `json:"mysql" yaml:"mysql"`
 	MongoDB       *MongoDBMigrationConfig `json:"mongodb" yaml:"mongodb"`
@@ -117,12 +117,14 @@ type ValidationConfig struct {
 	RequireBackup       bool     `json:"require_backup" yaml:"require_backup"`
 }
 
-// MigrationDirection 迁移方向
-type MigrationDirection string
+// Direction 迁移方向
+type Direction string
 
 const (
-	MigrationDirectionUp   MigrationDirection = "up"
-	MigrationDirectionDown MigrationDirection = "down"
+	// DirectionUp 表示向上迁移方向（应用迁移）
+	DirectionUp Direction = "up"
+	// DirectionDown 表示向下迁移方向（回滚迁移）
+	DirectionDown Direction = "down"
 )
 
 // BackupConfig 备份配置
@@ -134,15 +136,15 @@ type BackupConfig struct {
 	AutoBackup    bool   `json:"auto_backup" yaml:"auto_backup"`
 }
 
-// MigrationPlan 迁移计划
-type MigrationPlan struct {
-	Direction     MigrationDirection `json:"direction"`
-	TargetVersion string             `json:"target_version"`
-	Steps         int                `json:"steps"`
-	MySQLPlan     *MySQLPlan         `json:"mysql_plan"`
-	MongoDBPlan   *MongoDBPlan       `json:"mongodb_plan"`
-	EstimatedTime time.Duration      `json:"estimated_time"`
-	CreatedAt     time.Time          `json:"created_at"`
+// Plan 迁移计划
+type Plan struct {
+	Direction     Direction     `json:"direction"`
+	TargetVersion string        `json:"target_version"`
+	Steps         int           `json:"steps"`
+	MySQLPlan     *MySQLPlan    `json:"mysql_plan"`
+	MongoDBPlan   *MongoDBPlan  `json:"mongodb_plan"`
+	EstimatedTime time.Duration `json:"estimated_time"`
+	CreatedAt     time.Time     `json:"created_at"`
 }
 
 // MySQLPlan MySQL迁移计划
@@ -255,7 +257,7 @@ func scanMongoDBMigrations(dir string) ([]*MongoDBMigration, error) {
 		return nil, err
 	}
 
-	var migrations []*MongoDBMigration
+	migrations := make([]*MongoDBMigration, 0, len(files))
 
 	for _, file := range files {
 		if file.IsDir() {
@@ -421,9 +423,9 @@ func fileExists(filename string) bool {
 	return !os.IsNotExist(err)
 }
 
-// GetDefaultMigrationConfig 获取默认迁移配置
-func GetDefaultMigrationConfig() *MigrationConfig {
-	return &MigrationConfig{
+// GetDefaultConfig 获取默认迁移配置
+func GetDefaultConfig() *Config {
+	return &Config{
 		MigrationsDir: "migrations",
 		MySQL: &MySQLMigrationConfig{
 			Enabled:        true,

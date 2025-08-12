@@ -4,7 +4,6 @@ package migration
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -27,7 +26,7 @@ type TestDatabase struct {
 // SetupTestDatabase creates a test database setup.
 func SetupTestDatabase(t *testing.T) *TestDatabase {
 	// Create temporary directory for test files
-	tempDir, err := ioutil.TempDir("", "migration_test_*")
+	tempDir, err := os.MkdirTemp("", "migration_test_*")
 	require.NoError(t, err)
 
 	// For testing, we'll use a mock or skip actual database connections
@@ -80,12 +79,12 @@ func CreateTestMigration(t *testing.T, dir, version, name string, upSQL, downSQL
 
 	// Create up migration file
 	upFile := filepath.Join(migrationDir, fmt.Sprintf("%s_%s.up.sql", version, name))
-	err = ioutil.WriteFile(upFile, []byte(upSQL), 0644)
+	err = os.WriteFile(upFile, []byte(upSQL), 0644)
 	require.NoError(t, err)
 
 	// Create down migration file
 	downFile := filepath.Join(migrationDir, fmt.Sprintf("%s_%s.down.sql", version, name))
-	err = ioutil.WriteFile(downFile, []byte(downSQL), 0644)
+	err = os.WriteFile(downFile, []byte(downSQL), 0644)
 	require.NoError(t, err)
 }
 
@@ -98,7 +97,7 @@ func CreateTestMongoMigration(t *testing.T, dir, version, name, script string) {
 
 	// Create migration file
 	migrationFile := filepath.Join(migrationDir, fmt.Sprintf("%s_%s.js", version, name))
-	err = ioutil.WriteFile(migrationFile, []byte(script), 0644)
+	err = os.WriteFile(migrationFile, []byte(script), 0644)
 	require.NoError(t, err)
 }
 
@@ -285,7 +284,7 @@ func CreateMockMigrationFiles(t *testing.T, baseDir string, files []MockMigratio
 		require.NoError(t, err)
 
 		// Write file
-		err = ioutil.WriteFile(fullPath, []byte(file.Content), 0644)
+		err = os.WriteFile(fullPath, []byte(file.Content), 0644)
 		require.NoError(t, err)
 	}
 }
@@ -326,10 +325,10 @@ func GetTableCount(db *gorm.DB, tableName string) (int64, error) {
 func isValidTableName(tableName string) bool {
 	// Allow only alphanumeric characters and underscores
 	for _, char := range tableName {
-		if !((char >= 'a' && char <= 'z') ||
-			(char >= 'A' && char <= 'Z') ||
-			(char >= '0' && char <= '9') ||
-			char == '_') {
+		if (char < 'a' || char > 'z') &&
+			(char < 'A' || char > 'Z') &&
+			(char < '0' || char > '9') &&
+			char != '_' {
 			return false
 		}
 	}
@@ -337,13 +336,13 @@ func isValidTableName(tableName string) bool {
 }
 
 // BackupDatabase creates a backup of the test database.
-func BackupDatabase(db *gorm.DB, backupPath string) error {
+func BackupDatabase(_ *gorm.DB, _ string) error {
 	// For testing purposes, this is a mock implementation
 	return fmt.Errorf("backup not implemented for test database")
 }
 
 // RestoreDatabase restores the test database from backup.
-func RestoreDatabase(db *gorm.DB, backupPath string) error {
+func RestoreDatabase(_ *gorm.DB, _ string) error {
 	// For testing purposes, this is a mock implementation
 	return fmt.Errorf("restore not implemented for test database")
 }

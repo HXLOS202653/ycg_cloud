@@ -124,7 +124,7 @@ func TestTransactionManager_WithRepeatableReadTransaction(t *testing.T) {
 	ctx := context.Background()
 
 	executed := false
-	err := tm.WithRepeatableReadTransaction(ctx, func(tx *gorm.DB) error {
+	err := tm.WithRepeatableReadTransaction(ctx, func(_ *gorm.DB) error {
 		executed = true
 		return nil
 	})
@@ -146,7 +146,7 @@ func TestTransactionManager_WithSerializableTransaction(t *testing.T) {
 	ctx := context.Background()
 
 	executed := false
-	err := tm.WithSerializableTransaction(ctx, func(tx *gorm.DB) error {
+	err := tm.WithSerializableTransaction(ctx, func(_ *gorm.DB) error {
 		executed = true
 		return nil
 	})
@@ -199,19 +199,19 @@ func TestBatchOperation_ExecuteBatch(t *testing.T) {
 	executed := 0
 
 	operations := []func(*gorm.DB) error{
-		func(tx *gorm.DB) error {
+		func(_ *gorm.DB) error {
 			executed++
 			return nil
 		},
-		func(tx *gorm.DB) error {
+		func(_ *gorm.DB) error {
 			executed++
 			return nil
 		},
-		func(tx *gorm.DB) error {
+		func(_ *gorm.DB) error {
 			executed++
 			return nil
 		},
-		func(tx *gorm.DB) error {
+		func(_ *gorm.DB) error {
 			executed++
 			return nil
 		},
@@ -238,15 +238,15 @@ func TestBatchOperation_ExecuteBatch_WithError(t *testing.T) {
 	executed := 0
 
 	operations := []func(*gorm.DB) error{
-		func(tx *gorm.DB) error {
+		func(_ *gorm.DB) error {
 			executed++
 			return nil
 		},
-		func(tx *gorm.DB) error {
+		func(_ *gorm.DB) error {
 			executed++
 			return errors.New("batch error")
 		},
-		func(tx *gorm.DB) error {
+		func(_ *gorm.DB) error {
 			executed++
 			return nil
 		},
@@ -421,7 +421,7 @@ func BenchmarkBatchOperation_ExecuteBatch(b *testing.B) {
 	// Create operations for benchmark
 	operations := make([]func(*gorm.DB) error, 1000)
 	for i := range operations {
-		operations[i] = func(tx *gorm.DB) error {
+		operations[i] = func(_ *gorm.DB) error {
 			return nil
 		}
 	}

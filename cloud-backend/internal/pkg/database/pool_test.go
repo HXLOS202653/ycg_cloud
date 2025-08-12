@@ -96,7 +96,7 @@ func TestConnectionPool_Metrics(t *testing.T) {
 	assert.Equal(t, int64(0), metrics.TotalQueries)
 
 	// Execute some operations to generate metrics
-	err = pool.ExecuteWithMetrics(func(db *gorm.DB) error {
+	err = pool.ExecuteWithMetrics(func(_ *gorm.DB) error {
 		// Simulate query
 		time.Sleep(10 * time.Millisecond)
 		return nil

@@ -24,8 +24,8 @@ func NewGenerator(migrationsDir, templateDir string) *Generator {
 	}
 }
 
-// MigrationTemplate 迁移模板数据
-type MigrationTemplate struct {
+// Template 迁移模板数据
+type Template struct {
 	Version     string
 	Name        string
 	ClassName   string
@@ -39,7 +39,7 @@ type MigrationTemplate struct {
 func (g *Generator) GenerateMySQLMigration(name, description string) error {
 	version := generateVersion()
 
-	data := &MigrationTemplate{
+	data := &Template{
 		Version:     version,
 		Name:        name,
 		ClassName:   toPascalCase(name),
@@ -74,7 +74,7 @@ func (g *Generator) GenerateMySQLMigration(name, description string) error {
 func (g *Generator) GenerateMongoDBMigration(name, description string) error {
 	version := generateVersion()
 
-	data := &MigrationTemplate{
+	data := &Template{
 		Version:     version,
 		Name:        name,
 		ClassName:   toPascalCase(name),

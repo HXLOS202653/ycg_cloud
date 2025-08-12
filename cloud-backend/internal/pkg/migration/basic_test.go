@@ -145,8 +145,8 @@ func TestGetBasicTestMigrations(t *testing.T) {
 	assert.Contains(t, first.DownSQL, "DROP TABLE")
 }
 
-func TestMigrationConfig_Fields(t *testing.T) {
-	config := MigrationConfig{
+func TestConfig_Fields(t *testing.T) {
+	config := Config{
 		MigrationsDir: "/path/to/migrations",
 		MySQL: &MySQLMigrationConfig{
 			Enabled:        true,
@@ -206,9 +206,9 @@ func TestBackupConfig_Fields(t *testing.T) {
 	assert.True(t, config.AutoBackup)
 }
 
-func TestMigrationPlan_Fields(t *testing.T) {
+func TestPlan_Fields(t *testing.T) {
 	now := time.Now()
-	plan := MigrationPlan{
+	plan := Plan{
 		Direction:     "up",
 		TargetVersion: "20240101120000",
 		Steps:         3,
@@ -216,7 +216,7 @@ func TestMigrationPlan_Fields(t *testing.T) {
 		CreatedAt:     now,
 	}
 
-	assert.Equal(t, MigrationDirection("up"), plan.Direction)
+	assert.Equal(t, Direction("up"), plan.Direction)
 	assert.Equal(t, "20240101120000", plan.TargetVersion)
 	assert.Equal(t, 3, plan.Steps)
 	assert.Equal(t, 5*time.Minute, plan.EstimatedTime)
