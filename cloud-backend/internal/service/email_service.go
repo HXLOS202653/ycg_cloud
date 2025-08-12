@@ -332,6 +332,7 @@ func (s *EmailService) sendWithSSL(addr string, auth smtp.Auth, _ string, to []s
 	defer func() {
 		if err := conn.Close(); err != nil {
 			// Log connection close error but don't fail the operation
+			fmt.Printf("Failed to close SSL SMTP connection: %v\n", err)
 		}
 	}()
 
@@ -342,6 +343,7 @@ func (s *EmailService) sendWithSSL(addr string, auth smtp.Auth, _ string, to []s
 	defer func() {
 		if err := client.Quit(); err != nil {
 			// Log client quit error but don't fail the operation
+			fmt.Printf("Failed to quit SSL SMTP client: %v\n", err)
 		}
 	}()
 

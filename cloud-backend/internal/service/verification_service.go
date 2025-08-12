@@ -85,6 +85,7 @@ func (s *VerificationService) VerifyCode(email, code, purpose string) error {
 	storedCode.Attempts++
 	if err := s.updateVerificationCode(email, purpose, storedCode); err != nil {
 		// Log update error but continue verification
+		fmt.Printf("Failed to update verification code attempt count: %v\n", err)
 	}
 
 	// Verify the code
