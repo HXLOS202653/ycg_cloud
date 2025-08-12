@@ -1,7 +1,6 @@
 package migration
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -169,7 +168,7 @@ func scanMySQLMigrations(dir string) ([]*MySQLMigration, error) {
 		return []*MySQLMigration{}, nil
 	}
 
-	files, err := ioutil.ReadDir(dir)
+	files, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
 	}
@@ -251,7 +250,7 @@ func scanMongoDBMigrations(dir string) ([]*MongoDBMigration, error) {
 		return []*MongoDBMigration{}, nil
 	}
 
-	files, err := ioutil.ReadDir(dir)
+	files, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
 	}

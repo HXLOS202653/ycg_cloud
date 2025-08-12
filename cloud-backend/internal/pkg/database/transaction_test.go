@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"log"
 	"testing"
 	"time"
 
@@ -16,7 +17,9 @@ func TestTransactionManager_WithTransaction(t *testing.T) {
 	db := createTestDB(t)
 	defer func() {
 		sqlDB, _ := db.DB()
-		sqlDB.Close()
+		if err := sqlDB.Close(); err != nil {
+			log.Printf("关闭数据库失败: %v", err)
+		}
 	}()
 
 	tm := NewTransactionManager(db)
@@ -39,7 +42,9 @@ func TestTransactionManager_WithTransaction_Rollback(t *testing.T) {
 	db := createTestDB(t)
 	defer func() {
 		sqlDB, _ := db.DB()
-		sqlDB.Close()
+		if err := sqlDB.Close(); err != nil {
+			log.Printf("关闭数据库失败: %v", err)
+		}
 	}()
 
 	tm := NewTransactionManager(db)
@@ -59,7 +64,9 @@ func TestTransactionManager_WithTransactionOptions(t *testing.T) {
 	db := createTestDB(t)
 	defer func() {
 		sqlDB, _ := db.DB()
-		sqlDB.Close()
+		if err := sqlDB.Close(); err != nil {
+			log.Printf("关闭数据库失败: %v", err)
+		}
 	}()
 
 	tm := NewTransactionManager(db)
@@ -85,7 +92,9 @@ func TestTransactionManager_WithReadOnlyTransaction(t *testing.T) {
 	db := createTestDB(t)
 	defer func() {
 		sqlDB, _ := db.DB()
-		sqlDB.Close()
+		if err := sqlDB.Close(); err != nil {
+			log.Printf("关闭数据库失败: %v", err)
+		}
 	}()
 
 	tm := NewTransactionManager(db)
@@ -106,7 +115,9 @@ func TestTransactionManager_WithRepeatableReadTransaction(t *testing.T) {
 	db := createTestDB(t)
 	defer func() {
 		sqlDB, _ := db.DB()
-		sqlDB.Close()
+		if err := sqlDB.Close(); err != nil {
+			log.Printf("关闭数据库失败: %v", err)
+		}
 	}()
 
 	tm := NewTransactionManager(db)
@@ -126,7 +137,9 @@ func TestTransactionManager_WithSerializableTransaction(t *testing.T) {
 	db := createTestDB(t)
 	defer func() {
 		sqlDB, _ := db.DB()
-		sqlDB.Close()
+		if err := sqlDB.Close(); err != nil {
+			log.Printf("关闭数据库失败: %v", err)
+		}
 	}()
 
 	tm := NewTransactionManager(db)
@@ -146,7 +159,9 @@ func TestTransactionManager_Timeout(t *testing.T) {
 	db := createTestDB(t)
 	defer func() {
 		sqlDB, _ := db.DB()
-		sqlDB.Close()
+		if err := sqlDB.Close(); err != nil {
+			log.Printf("关闭数据库失败: %v", err)
+		}
 	}()
 
 	tm := NewTransactionManager(db)
@@ -172,7 +187,9 @@ func TestBatchOperation_ExecuteBatch(t *testing.T) {
 	db := createTestDB(t)
 	defer func() {
 		sqlDB, _ := db.DB()
-		sqlDB.Close()
+		if err := sqlDB.Close(); err != nil {
+			log.Printf("关闭数据库失败: %v", err)
+		}
 	}()
 
 	tm := NewTransactionManager(db)
@@ -209,7 +226,9 @@ func TestBatchOperation_ExecuteBatch_WithError(t *testing.T) {
 	db := createTestDB(t)
 	defer func() {
 		sqlDB, _ := db.DB()
-		sqlDB.Close()
+		if err := sqlDB.Close(); err != nil {
+			log.Printf("关闭数据库失败: %v", err)
+		}
 	}()
 
 	tm := NewTransactionManager(db)
@@ -244,7 +263,9 @@ func TestBatchOperation_EmptyOperations(t *testing.T) {
 	db := createTestDB(t)
 	defer func() {
 		sqlDB, _ := db.DB()
-		sqlDB.Close()
+		if err := sqlDB.Close(); err != nil {
+			log.Printf("关闭数据库失败: %v", err)
+		}
 	}()
 
 	tm := NewTransactionManager(db)
@@ -261,7 +282,9 @@ func TestSavepointManager(t *testing.T) {
 	db := createTestDB(t)
 	defer func() {
 		sqlDB, _ := db.DB()
-		sqlDB.Close()
+		if err := sqlDB.Close(); err != nil {
+			log.Printf("关闭数据库失败: %v", err)
+		}
 	}()
 
 	tm := NewTransactionManager(db)
@@ -319,7 +342,9 @@ func TestTransactionManager_WithTransactionMonitoring(t *testing.T) {
 	db := createTestDB(t)
 	defer func() {
 		sqlDB, _ := db.DB()
-		sqlDB.Close()
+		if err := sqlDB.Close(); err != nil {
+			log.Printf("关闭数据库失败: %v", err)
+		}
 	}()
 
 	tm := NewTransactionManager(db)
@@ -361,7 +386,9 @@ func BenchmarkTransactionManager_WithTransaction(b *testing.B) {
 	db := createTestDB(b)
 	defer func() {
 		sqlDB, _ := db.DB()
-		sqlDB.Close()
+		if err := sqlDB.Close(); err != nil {
+			log.Printf("关闭数据库失败: %v", err)
+		}
 	}()
 
 	tm := NewTransactionManager(db)
@@ -382,7 +409,9 @@ func BenchmarkBatchOperation_ExecuteBatch(b *testing.B) {
 	db := createTestDB(b)
 	defer func() {
 		sqlDB, _ := db.DB()
-		sqlDB.Close()
+		if err := sqlDB.Close(); err != nil {
+			log.Printf("关闭数据库失败: %v", err)
+		}
 	}()
 
 	tm := NewTransactionManager(db)

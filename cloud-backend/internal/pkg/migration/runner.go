@@ -3,7 +3,6 @@ package migration
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -471,7 +470,7 @@ func (r *Runner) rollbackMySQLMigration(record *MySQLMigrationRecord) error {
 	mysqlDir := filepath.Join(r.migrationsDir, "mysql")
 	downFile := filepath.Join(mysqlDir, fmt.Sprintf("%s_%s.down.sql", record.Version, record.Name))
 
-	downSQL, err := ioutil.ReadFile(downFile)
+	downSQL, err := os.ReadFile(downFile)
 	if err != nil {
 		return fmt.Errorf("读取down文件失败: %v", err)
 	}
@@ -492,7 +491,7 @@ func (r *Runner) rollbackMySQLMigration(record *MySQLMigrationRecord) error {
 // executeMongoDBMigration 执行MongoDB迁移
 func (r *Runner) executeMongoDBMigration(mig *MongoDBMigration) error {
 	// 读取JavaScript文件
-	jsContent, err := ioutil.ReadFile(mig.JSFile)
+	jsContent, err := os.ReadFile(mig.JSFile)
 	if err != nil {
 		return fmt.Errorf("读取JavaScript文件失败: %v", err)
 	}
@@ -550,36 +549,61 @@ func (r *Runner) previewMySQLMigrations(migrations []*MySQLMigration, direction 
 	fmt.Println(strings.Repeat("=", 80))
 
 	for i, mig := range migrations {
-		fmt.Printf("\n%d. 迁移: %s_%s\n", i+1, mig.Version, mig.Name)
-
-		var sqlFile string
-		if direction == MigrationDirectionUp {
-			sqlFile = mig.UpFile
-			fmt.Printf("   文件: %s\n", sqlFile)
-		} else {
-			sqlFile = mig.DownFile
-			fmt.Printf("   文件: %s\n", sqlFile)
-		}
-
-		// 读取并显示SQL内容
-		if content, err := ioutil.ReadFile(sqlFile); err == nil {
-			fmt.Printf("   内容预览:\n")
-			lines := strings.Split(string(content), "\n")
-			for j, line := range lines {
-				if j > 10 { // 只显示前10行
-					fmt.Printf("   ... (还有 %d 行)\n", len(lines)-j)
-					break
-				}
-				if strings.TrimSpace(line) != "" && !strings.HasPrefix(strings.TrimSpace(line), "--") {
-					fmt.Printf("   %s\n", line)
-				}
-			}
-		}
-
+		r.previewSingleMySQLMigration(mig, i+1, direction)
 		fmt.Println(strings.Repeat("-", 80))
 	}
 
 	return nil
+}
+
+// previewSingleMySQLMigration 预览单个MySQL迁移
+func (r *Runner) previewSingleMySQLMigration(mig *MySQLMigration, index int, direction MigrationDirection) {
+	fmt.Printf("\n%d. 迁移: %s_%s\n", index, mig.Version, mig.Name)
+
+	sqlFile := r.getSQLFileByDirection(mig, direction)
+	fmt.Printf("   文件: %s\n", sqlFile)
+
+	r.previewSQLFileContent(sqlFile)
+}
+
+// getSQLFileByDirection 根据方向获取SQL文件路径
+func (r *Runner) getSQLFileByDirection(mig *MySQLMigration, direction MigrationDirection) string {
+	if direction == MigrationDirectionUp {
+		return mig.UpFile
+	}
+	return mig.DownFile
+}
+
+// previewSQLFileContent 预览SQL文件内容
+func (r *Runner) previewSQLFileContent(sqlFile string) {
+	content, err := os.ReadFile(sqlFile)
+	if err != nil {
+		fmt.Printf("   读取文件失败: %v\n", err)
+		return
+	}
+
+	fmt.Printf("   内容预览:\n")
+	r.displaySQLContentPreview(string(content))
+}
+
+// displaySQLContentPreview 显示SQL内容预览
+func (r *Runner) displaySQLContentPreview(content string) {
+	lines := strings.Split(content, "\n")
+	displayCount := 0
+	const maxPreviewLines = 10
+
+	for i, line := range lines {
+		trimmedLine := strings.TrimSpace(line)
+		if trimmedLine != "" && !strings.HasPrefix(trimmedLine, "--") {
+			fmt.Printf("   %s\n", line)
+			displayCount++
+		}
+
+		if displayCount >= maxPreviewLines && i < len(lines)-1 {
+			fmt.Printf("   ... (还有 %d 行)\n", len(lines)-i-1)
+			break
+		}
+	}
 }
 
 // previewMySQLRollbacks 预览MySQL回滚
@@ -588,29 +612,26 @@ func (r *Runner) previewMySQLRollbacks(records []*MySQLMigrationRecord) error {
 	fmt.Println(strings.Repeat("=", 80))
 
 	for i, record := range records {
-		fmt.Printf("\n%d. 回滚: %s_%s\n", i+1, record.Version, record.Name)
-		fmt.Printf("   应用时间: %s\n", record.AppliedAt.Format("2006-01-02 15:04:05"))
-
-		// 显示回滚SQL的预览
-		downFile := filepath.Join(r.migrationsDir, "mysql", fmt.Sprintf("%s_%s.down.sql", record.Version, record.Name))
-		if content, err := ioutil.ReadFile(downFile); err == nil {
-			fmt.Printf("   回滚SQL预览:\n")
-			lines := strings.Split(string(content), "\n")
-			for j, line := range lines {
-				if j > 10 {
-					fmt.Printf("   ... (还有 %d 行)\n", len(lines)-j)
-					break
-				}
-				if strings.TrimSpace(line) != "" && !strings.HasPrefix(strings.TrimSpace(line), "--") {
-					fmt.Printf("   %s\n", line)
-				}
-			}
-		}
-
+		r.previewSingleMySQLRollback(record, i+1)
 		fmt.Println(strings.Repeat("-", 80))
 	}
 
 	return nil
+}
+
+// previewSingleMySQLRollback 预览单个MySQL回滚
+func (r *Runner) previewSingleMySQLRollback(record *MySQLMigrationRecord, index int) {
+	fmt.Printf("\n%d. 回滚: %s_%s\n", index, record.Version, record.Name)
+	fmt.Printf("   应用时间: %s\n", record.AppliedAt.Format("2006-01-02 15:04:05"))
+
+	downFile := r.buildDownFilePath(record)
+	fmt.Printf("   回滚SQL预览:\n")
+	r.previewSQLFileContent(downFile)
+}
+
+// buildDownFilePath 构建down文件路径
+func (r *Runner) buildDownFilePath(record *MySQLMigrationRecord) string {
+	return filepath.Join(r.migrationsDir, "mysql", fmt.Sprintf("%s_%s.down.sql", record.Version, record.Name))
 }
 
 // previewMongoDBMigrations 预览MongoDB迁移
@@ -623,7 +644,7 @@ func (r *Runner) previewMongoDBMigrations(migrations []*MongoDBMigration) error 
 		fmt.Printf("   文件: %s\n", mig.JSFile)
 
 		// 读取并显示JavaScript内容
-		if content, err := ioutil.ReadFile(mig.JSFile); err == nil {
+		if content, err := os.ReadFile(mig.JSFile); err == nil {
 			fmt.Printf("   脚本预览:\n")
 			lines := strings.Split(string(content), "\n")
 			for j, line := range lines {

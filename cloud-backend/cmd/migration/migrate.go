@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -77,7 +76,7 @@ func (mt *MigrationTool) Up(targetVersion string, steps int) error {
 		fmt.Printf("\n⏳ [%d/%d] 执行迁移: %s_%s\n", i+1, len(toApply), migration.Version, migration.Name)
 
 		if err := mt.applyMigration(migration); err != nil {
-			return fmt.Errorf("执行迁移 %s_%s 失败: %v", migration.Version, migration.Name, err)
+			return fmt.Errorf("执行迁移 %s_%s 失败: %w", migration.Version, migration.Name, err)
 		}
 
 		fmt.Printf("✅ 迁移 %s_%s 执行成功\n", migration.Version, migration.Name)
@@ -97,7 +96,7 @@ func (mt *MigrationTool) Down(targetVersion string, steps int) error {
 	// 获取已应用的迁移
 	appliedMigrations, err := mt.getAppliedMigrations()
 	if err != nil {
-		return fmt.Errorf("获取已应用迁移失败: %v", err)
+		return fmt.Errorf("获取已应用迁移失败: %w", err)
 	}
 
 	if len(appliedMigrations) == 0 {
@@ -128,7 +127,7 @@ func (mt *MigrationTool) Down(targetVersion string, steps int) error {
 		fmt.Printf("\n⏳ [%d/%d] 回滚迁移: %s_%s\n", i+1, len(toRollback), migration.Version, migration.Name)
 
 		if err := mt.rollbackMigration(migration); err != nil {
-			return fmt.Errorf("回滚迁移 %s_%s 失败: %v", migration.Version, migration.Name, err)
+			return fmt.Errorf("回滚迁移 %s_%s 失败: %w", migration.Version, migration.Name, err)
 		}
 
 		fmt.Printf("✅ 迁移 %s_%s 回滚成功\n", migration.Version, migration.Name)
@@ -148,13 +147,13 @@ func (mt *MigrationTool) Status() error {
 	// 获取所有迁移文件
 	allMigrations, err := mt.getAllMigrations()
 	if err != nil {
-		return fmt.Errorf("获取迁移文件失败: %v", err)
+		return fmt.Errorf("获取迁移文件失败: %w", err)
 	}
 
 	// 获取已应用的迁移记录
 	appliedMap, err := mt.getAppliedMigrationsMap()
 	if err != nil {
-		return fmt.Errorf("获取已应用迁移记录失败: %v", err)
+		return fmt.Errorf("获取已应用迁移记录失败: %w", err)
 	}
 
 	fmt.Println("📊 数据库迁移状态:")
@@ -209,7 +208,7 @@ func (mt *MigrationTool) Create(name string) error {
 	// 确保MySQL迁移目录存在
 	mysqlDir := getMigrationsPath(mt.migrationsDir, "mysql")
 	if err := ensureDir(mysqlDir); err != nil {
-		return fmt.Errorf("创建MySQL迁移目录失败: %v", err)
+		return fmt.Errorf("创建MySQL迁移目录失败: %w", err)
 	}
 
 	// 生成文件名
@@ -238,7 +237,7 @@ func (mt *MigrationTool) Create(name string) error {
 `, name, version, time.Now().Format("2006-01-02 15:04:05"))
 
 	if err := os.WriteFile(upFile, []byte(upTemplate), 0600); err != nil {
-		return fmt.Errorf("创建up文件失败: %v", err)
+		return fmt.Errorf("创建up文件失败: %w", err)
 	}
 
 	// 创建down文件
@@ -256,7 +255,7 @@ func (mt *MigrationTool) Create(name string) error {
 	if err := os.WriteFile(downFile, []byte(downTemplate), 0600); err != nil {
 		// 如果down文件创建失败，删除已创建的up文件
 		_ = os.Remove(upFile)
-		return fmt.Errorf("创建down文件失败: %v", err)
+		return fmt.Errorf("创建down文件失败: %w", err)
 	}
 
 	fmt.Printf("✅ 成功创建迁移文件:\n")
@@ -332,11 +331,22 @@ func (mt *MigrationTool) getAllMigrations() ([]*MigrationFile, error) {
 		return []*MigrationFile{}, nil
 	}
 
-	files, err := ioutil.ReadDir(mysqlDir)
+	files, err := os.ReadDir(mysqlDir)
 	if err != nil {
-		return nil, fmt.Errorf("读取迁移目录失败: %v", err)
+		return nil, fmt.Errorf("读取迁移目录失败: %w", err)
 	}
 
+	migrationsMap, err := mt.parseMigrationFiles(files, mysqlDir)
+	if err != nil {
+		return nil, err
+	}
+
+	migrations := mt.convertToSortedSlice(migrationsMap)
+	return migrations, nil
+}
+
+// parseMigrationFiles 解析迁移文件并构建映射
+func (mt *MigrationTool) parseMigrationFiles(files []os.DirEntry, mysqlDir string) (map[string]*MigrationFile, error) {
 	migrationsMap := make(map[string]*MigrationFile)
 
 	for _, file := range files {
@@ -349,48 +359,82 @@ func (mt *MigrationTool) getAllMigrations() ([]*MigrationFile, error) {
 			continue
 		}
 
-		// 解析文件名: {version}_{name}.{up|down}.sql
-		parts := strings.Split(filename, ".")
-		if len(parts) != 3 {
-			continue
+		migrationInfo, err := mt.parseMigrationFilename(filename)
+		if err != nil {
+			continue // 跳过无效文件
 		}
 
-		direction := parts[1]       // up 或 down
-		nameWithVersion := parts[0] // {version}_{name}
-
-		// 分离版本号和名称
-		underscoreIndex := strings.Index(nameWithVersion, "_")
-		if underscoreIndex == -1 {
-			continue
-		}
-
-		version := nameWithVersion[:underscoreIndex]
-		name := nameWithVersion[underscoreIndex+1:]
-
-		// 验证版本号格式
-		if !isValidVersion(version) {
-			continue
-		}
-
-		migration, exists := migrationsMap[version]
-		if !exists {
-			migration = &MigrationFile{
-				Version: version,
-				Name:    name,
-			}
-			migrationsMap[version] = migration
-		}
-
-		filePath := filepath.Join(mysqlDir, filename)
-		switch direction {
-		case "up":
-			migration.UpFile = filePath
-		case "down":
-			migration.DownFile = filePath
-		}
+		migration := mt.getOrCreateMigration(migrationsMap, migrationInfo.version, migrationInfo.name)
+		mt.setMigrationFile(migration, migrationInfo.direction, filepath.Join(mysqlDir, filename))
 	}
 
-	// 转换为切片并排序
+	return migrationsMap, nil
+}
+
+// migrationFileInfo 迁移文件信息
+type migrationFileInfo struct {
+	version   string
+	name      string
+	direction string
+}
+
+// parseMigrationFilename 解析迁移文件名
+func (mt *MigrationTool) parseMigrationFilename(filename string) (*migrationFileInfo, error) {
+	// 解析文件名: {version}_{name}.{up|down}.sql
+	parts := strings.Split(filename, ".")
+	if len(parts) != 3 {
+		return nil, fmt.Errorf("invalid filename format")
+	}
+
+	direction := parts[1]       // up 或 down
+	nameWithVersion := parts[0] // {version}_{name}
+
+	// 分离版本号和名称
+	underscoreIndex := strings.Index(nameWithVersion, "_")
+	if underscoreIndex == -1 {
+		return nil, fmt.Errorf("no underscore found in filename")
+	}
+
+	version := nameWithVersion[:underscoreIndex]
+	name := nameWithVersion[underscoreIndex+1:]
+
+	// 验证版本号格式
+	if !isValidVersion(version) {
+		return nil, fmt.Errorf("invalid version format")
+	}
+
+	return &migrationFileInfo{
+		version:   version,
+		name:      name,
+		direction: direction,
+	}, nil
+}
+
+// getOrCreateMigration 获取或创建迁移对象
+func (mt *MigrationTool) getOrCreateMigration(migrationsMap map[string]*MigrationFile, version, name string) *MigrationFile {
+	migration, exists := migrationsMap[version]
+	if !exists {
+		migration = &MigrationFile{
+			Version: version,
+			Name:    name,
+		}
+		migrationsMap[version] = migration
+	}
+	return migration
+}
+
+// setMigrationFile 设置迁移文件路径
+func (mt *MigrationTool) setMigrationFile(migration *MigrationFile, direction, filePath string) {
+	switch direction {
+	case "up":
+		migration.UpFile = filePath
+	case "down":
+		migration.DownFile = filePath
+	}
+}
+
+// convertToSortedSlice 转换为排序的切片
+func (mt *MigrationTool) convertToSortedSlice(migrationsMap map[string]*MigrationFile) []*MigrationFile {
 	var migrations []*MigrationFile
 	for _, migration := range migrationsMap {
 		// 只包含同时有up和down文件的迁移
@@ -404,7 +448,7 @@ func (mt *MigrationTool) getAllMigrations() ([]*MigrationFile, error) {
 		return migrations[i].Version < migrations[j].Version
 	})
 
-	return migrations, nil
+	return migrations
 }
 
 // filterMigrationsForUp 过滤需要向上迁移的文件
@@ -452,20 +496,20 @@ func (mt *MigrationTool) filterMigrationsForDown(records []*MigrationRecord, tar
 // applyMigration 应用迁移
 func (mt *MigrationTool) applyMigration(migration *MigrationFile) error {
 	// 读取up文件内容
-	upSQL, err := ioutil.ReadFile(migration.UpFile)
+	upSQL, err := os.ReadFile(migration.UpFile)
 	if err != nil {
-		return fmt.Errorf("读取up文件失败: %v", err)
+		return fmt.Errorf("读取up文件失败: %w", err)
 	}
 
 	// 读取down文件内容
-	downSQL, err := ioutil.ReadFile(migration.DownFile)
+	downSQL, err := os.ReadFile(migration.DownFile)
 	if err != nil {
-		return fmt.Errorf("读取down文件失败: %v", err)
+		return fmt.Errorf("读取down文件失败: %w", err)
 	}
 
 	// 执行迁移SQL
 	if err := mt.executeSQLStatements(string(upSQL)); err != nil {
-		return fmt.Errorf("执行迁移SQL失败: %v", err)
+		return fmt.Errorf("执行迁移SQL失败: %w", err)
 	}
 
 	// 记录迁移
@@ -478,7 +522,7 @@ func (mt *MigrationTool) applyMigration(migration *MigrationFile) error {
 	}
 
 	if err := mt.db.Create(record).Error; err != nil {
-		return fmt.Errorf("记录迁移失败: %v", err)
+		return fmt.Errorf("记录迁移失败: %w", err)
 	}
 
 	return nil
@@ -488,12 +532,12 @@ func (mt *MigrationTool) applyMigration(migration *MigrationFile) error {
 func (mt *MigrationTool) rollbackMigration(record *MigrationRecord) error {
 	// 执行回滚SQL
 	if err := mt.executeSQLStatements(record.DownSQL); err != nil {
-		return fmt.Errorf("执行回滚SQL失败: %v", err)
+		return fmt.Errorf("执行回滚SQL失败: %w", err)
 	}
 
 	// 删除迁移记录
 	if err := mt.db.Delete(record).Error; err != nil {
-		return fmt.Errorf("删除迁移记录失败: %v", err)
+		return fmt.Errorf("删除迁移记录失败: %w", err)
 	}
 
 	return nil
@@ -515,7 +559,7 @@ func (mt *MigrationTool) executeSQLStatements(sql string) error {
 		}
 
 		if err := mt.db.Exec(statement).Error; err != nil {
-			return fmt.Errorf("执行SQL语句失败 '%s': %v", statement, err)
+			return fmt.Errorf("执行SQL语句失败 '%s': %w", statement, err)
 		}
 	}
 
