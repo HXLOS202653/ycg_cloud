@@ -48,12 +48,12 @@ func SetupTestDatabase(t *testing.T) *TestDatabase {
 	cleanup := func() {
 		// Clean up MongoDB
 		if mongoDB != nil && mongoClient != nil {
-			mongoDB.Drop(context.Background())
-			mongoClient.Disconnect(context.Background())
+			_ = mongoDB.Drop(context.Background())
+			_ = mongoClient.Disconnect(context.Background())
 		}
 
 		// Clean up temp directory
-		os.RemoveAll(tempDir)
+		_ = os.RemoveAll(tempDir)
 	}
 
 	return &TestDatabase{
@@ -311,9 +311,29 @@ func ExecuteSQL(db *gorm.DB, query string, args ...interface{}) error {
 
 // GetTableCount returns the number of rows in a table.
 func GetTableCount(db *gorm.DB, tableName string) (int64, error) {
+	// Validate table name to prevent SQL injection
+	if !isValidTableName(tableName) {
+		return 0, fmt.Errorf("invalid table name: %s", tableName)
+	}
+
 	var count int64
+	// Note: Table names cannot be parameterized in SQL, so we validate above
 	err := db.Raw("SELECT COUNT(*) FROM " + tableName).Scan(&count).Error
 	return count, err
+}
+
+// isValidTableName validates table name to prevent SQL injection
+func isValidTableName(tableName string) bool {
+	// Allow only alphanumeric characters and underscores
+	for _, char := range tableName {
+		if !((char >= 'a' && char <= 'z') ||
+			(char >= 'A' && char <= 'Z') ||
+			(char >= '0' && char <= '9') ||
+			char == '_') {
+			return false
+		}
+	}
+	return len(tableName) > 0 && len(tableName) <= 64 // MySQL table name limit
 }
 
 // BackupDatabase creates a backup of the test database.

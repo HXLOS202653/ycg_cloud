@@ -671,8 +671,10 @@ func (s *CoreTableIndexStrategy) OptimizeIndexes(db *gorm.DB) error {
 	if s.config.MaintenanceConfig.AutoAnalyze {
 		tables := []string{"users", "files", "file_versions", "upload_tasks", "file_shares", "teams"}
 		for _, table := range tables {
-			if err := db.Exec(fmt.Sprintf("ANALYZE TABLE %s", table)).Error; err != nil {
-				fmt.Printf("Warning: Failed to analyze table %s: %v\n", table, err)
+			if isValidSystemTableName(table) {
+				if err := db.Exec(fmt.Sprintf("ANALYZE TABLE %s", table)).Error; err != nil {
+					fmt.Printf("Warning: Failed to analyze table %s: %v\n", table, err)
+				}
 			}
 		}
 	}
@@ -680,8 +682,10 @@ func (s *CoreTableIndexStrategy) OptimizeIndexes(db *gorm.DB) error {
 	// 优化表（重建索引）
 	optimizeTables := []string{"files", "file_shares", "teams"}
 	for _, table := range optimizeTables {
-		if err := db.Exec(fmt.Sprintf("OPTIMIZE TABLE %s", table)).Error; err != nil {
-			fmt.Printf("Warning: Failed to optimize table %s: %v\n", table, err)
+		if isValidSystemTableName(table) {
+			if err := db.Exec(fmt.Sprintf("OPTIMIZE TABLE %s", table)).Error; err != nil {
+				fmt.Printf("Warning: Failed to optimize table %s: %v\n", table, err)
+			}
 		}
 	}
 
@@ -702,4 +706,23 @@ func joinStrings(strs []string, sep string) string {
 		result += sep + strs[i]
 	}
 	return result
+}
+
+// isValidSystemTableName validates system table names to prevent SQL injection
+func isValidSystemTableName(tableName string) bool {
+	// Whitelist of allowed system table names
+	allowedTables := map[string]bool{
+		"users":          true,
+		"files":          true,
+		"file_versions":  true,
+		"upload_tasks":   true,
+		"file_shares":    true,
+		"teams":          true,
+		"team_members":   true,
+		"notifications":  true,
+		"operation_logs": true,
+		"security_logs":  true,
+	}
+
+	return allowedTables[tableName]
 }

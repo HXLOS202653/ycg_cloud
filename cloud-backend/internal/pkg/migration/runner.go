@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"gorm.io/gorm"
@@ -20,27 +22,44 @@ type Runner struct {
 	migrationsDir string
 	verbose       bool
 	dryRun        bool
+	logger        *logrus.Logger
 }
 
 // NewRunner 创建迁移执行器
 func NewRunner(mysqlDB *gorm.DB, mongoDB *mongo.Database, migrationsDir string, verbose, dryRun bool) *Runner {
+	logger := logrus.New()
+	logger.SetFormatter(&logrus.JSONFormatter{})
+
+	if verbose {
+		logger.SetLevel(logrus.DebugLevel)
+	} else {
+		logger.SetLevel(logrus.InfoLevel)
+	}
+
 	return &Runner{
 		mysqlDB:       mysqlDB,
 		mongoDB:       mongoDB,
 		migrationsDir: migrationsDir,
 		verbose:       verbose,
 		dryRun:        dryRun,
+		logger:        logger,
 	}
 }
 
 // RunMySQLMigrations 执行MySQL迁移
 func (r *Runner) RunMySQLMigrations(direction MigrationDirection, targetVersion string, steps int) error {
 	fmt.Printf("🚀 开始执行 MySQL 迁移 (%s)\n", direction)
+	r.logger.WithFields(logrus.Fields{
+		"direction":      direction,
+		"target_version": targetVersion,
+		"steps":          steps,
+		"database_type":  "mysql",
+	}).Info("Starting MySQL migration execution")
 
 	switch direction {
-	case DirectionUp:
+	case MigrationDirectionUp:
 		return r.runMySQLUp(targetVersion, steps)
-	case DirectionDown:
+	case MigrationDirectionDown:
 		return r.runMySQLDown(targetVersion, steps)
 	default:
 		return fmt.Errorf("不支持的迁移方向: %s", direction)
@@ -52,9 +71,9 @@ func (r *Runner) RunMongoDBMigrations(direction MigrationDirection, targetVersio
 	fmt.Printf("🚀 开始执行 MongoDB 迁移 (%s)\n", direction)
 
 	switch direction {
-	case DirectionUp:
+	case MigrationDirectionUp:
 		return r.runMongoDBUp(targetVersion, steps)
-	case DirectionDown:
+	case MigrationDirectionDown:
 		return r.runMongoDBDown(targetVersion, steps)
 	default:
 		return fmt.Errorf("不支持的迁移方向: %s", direction)
@@ -80,7 +99,7 @@ func (r *Runner) runMySQLUp(targetVersion string, steps int) error {
 	}
 
 	// 过滤迁移
-	toExecute := r.filterMigrations(pending, targetVersion, steps, DirectionUp)
+	toExecute := r.filterMigrations(pending, targetVersion, steps, MigrationDirectionUp)
 
 	if len(toExecute) == 0 {
 		fmt.Println("📋 没有符合条件的MySQL迁移需要执行")
@@ -94,7 +113,7 @@ func (r *Runner) runMySQLUp(targetVersion string, steps int) error {
 
 	if r.dryRun {
 		fmt.Println("🔍 预览模式，不会实际执行迁移")
-		return r.previewMySQLMigrations(toExecute, DirectionUp)
+		return r.previewMySQLMigrations(toExecute, MigrationDirectionUp)
 	}
 
 	// 执行迁移
@@ -102,12 +121,22 @@ func (r *Runner) runMySQLUp(targetVersion string, steps int) error {
 		fmt.Printf("\n⏳ [%d/%d] 执行MySQL迁移: %s_%s\n", i+1, len(toExecute), mig.Version, mig.Name)
 
 		startTime := time.Now()
-		if err := r.executeMySQLMigration(mig, DirectionUp); err != nil {
+		if err := r.executeMySQLMigration(mig, MigrationDirectionUp); err != nil {
+			r.logger.WithFields(logrus.Fields{
+				"migration_version": mig.Version,
+				"migration_name":    mig.Name,
+				"error":             err.Error(),
+			}).Error("MySQL migration execution failed")
 			return fmt.Errorf("执行MySQL迁移失败: %v", err)
 		}
 		duration := time.Since(startTime)
 
 		fmt.Printf("✅ MySQL迁移 %s_%s 执行成功 (耗时: %v)\n", mig.Version, mig.Name, duration)
+		r.logger.WithFields(logrus.Fields{
+			"migration_version": mig.Version,
+			"migration_name":    mig.Name,
+			"duration":          duration.String(),
+		}).Info("MySQL migration completed successfully")
 	}
 
 	fmt.Printf("\n🎉 成功执行了 %d 个MySQL迁移\n", len(toExecute))
@@ -181,7 +210,7 @@ func (r *Runner) runMongoDBUp(targetVersion string, steps int) error {
 	}
 
 	// 过滤迁移
-	toExecute := r.filterMongoMigrations(pending, targetVersion, steps, DirectionUp)
+	toExecute := r.filterMongoMigrations(pending, targetVersion, steps, MigrationDirectionUp)
 
 	if len(toExecute) == 0 {
 		fmt.Println("📋 没有符合条件的MongoDB迁移需要执行")
@@ -402,14 +431,14 @@ func (r *Runner) filterMongoMigrations(migrations []*MongoDBMigration, targetVer
 // executeMySQLMigration 执行MySQL迁移
 func (r *Runner) executeMySQLMigration(mig *MySQLMigration, direction MigrationDirection) error {
 	var sqlFile string
-	if direction == DirectionUp {
+	if direction == MigrationDirectionUp {
 		sqlFile = mig.UpFile
 	} else {
 		sqlFile = mig.DownFile
 	}
 
 	// 读取SQL文件
-	sqlContent, err := ioutil.ReadFile(sqlFile)
+	sqlContent, err := os.ReadFile(sqlFile)
 	if err != nil {
 		return fmt.Errorf("读取SQL文件失败: %v", err)
 	}
@@ -420,7 +449,7 @@ func (r *Runner) executeMySQLMigration(mig *MySQLMigration, direction MigrationD
 	}
 
 	// 记录迁移
-	if direction == DirectionUp {
+	if direction == MigrationDirectionUp {
 		record := &MySQLMigrationRecord{
 			Version:   mig.Version,
 			Name:      mig.Name,
@@ -524,7 +553,7 @@ func (r *Runner) previewMySQLMigrations(migrations []*MySQLMigration, direction 
 		fmt.Printf("\n%d. 迁移: %s_%s\n", i+1, mig.Version, mig.Name)
 
 		var sqlFile string
-		if direction == DirectionUp {
+		if direction == MigrationDirectionUp {
 			sqlFile = mig.UpFile
 			fmt.Printf("   文件: %s\n", sqlFile)
 		} else {

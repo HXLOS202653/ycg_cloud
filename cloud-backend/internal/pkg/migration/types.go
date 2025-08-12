@@ -118,6 +118,14 @@ type ValidationConfig struct {
 	RequireBackup       bool     `json:"require_backup" yaml:"require_backup"`
 }
 
+// MigrationDirection 迁移方向
+type MigrationDirection string
+
+const (
+	MigrationDirectionUp   MigrationDirection = "up"
+	MigrationDirectionDown MigrationDirection = "down"
+)
+
 // BackupConfig 备份配置
 type BackupConfig struct {
 	Enabled       bool   `json:"enabled" yaml:"enabled"`
