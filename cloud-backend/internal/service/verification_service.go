@@ -96,6 +96,7 @@ func (s *VerificationService) VerifyCode(email, code, purpose string) error {
 	// Code is valid, delete it to prevent reuse
 	if err := s.deleteVerificationCode(email, purpose); err != nil {
 		// Log deletion error but don't fail verification
+		fmt.Printf("Failed to delete used verification code: %v\n", err)
 	}
 
 	return nil
@@ -203,6 +204,7 @@ func (s *VerificationService) getVerificationCode(email, purpose string) (*Verif
 	if time.Now().After(verificationCode.ExpiresAt) {
 		if err := s.deleteVerificationCode(email, purpose); err != nil {
 			// Log deletion error but continue
+			fmt.Printf("Failed to delete expired verification code: %v\n", err)
 		}
 		return nil, fmt.Errorf("verification code expired")
 	}

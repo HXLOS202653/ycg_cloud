@@ -698,6 +698,7 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 		if _, err := h.sessionService.CreateSession(user.ID, tokenPair.RefreshToken, deviceInfo, clientIP, userAgent); err != nil {
 			// Log error but don't fail the refresh process
 			// Session creation failure shouldn't block token refresh
+			fmt.Printf("Failed to create session during token refresh: %v\n", err)
 		}
 	}
 
