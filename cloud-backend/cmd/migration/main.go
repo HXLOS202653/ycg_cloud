@@ -228,7 +228,7 @@ func getBuildInfo() string {
 // ensureDir 确保目录存在
 func ensureDir(dir string) error {
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		return os.MkdirAll(dir, 0750)
+		return os.MkdirAll(dir, 0o750)
 	}
 	return nil
 }

@@ -44,15 +44,15 @@ func createTestDB(t testing.TB) *gorm.DB {
 }
 
 func TestPoolConfig_Default(t *testing.T) {
-	config := DefaultPoolConfig()
+	poolConfig := DefaultPoolConfig()
 
-	assert.Equal(t, 100, config.MaxOpenConns)
-	assert.Equal(t, 10, config.MaxIdleConns)
-	assert.Equal(t, time.Hour, config.ConnMaxLifetime)
-	assert.Equal(t, 10*time.Minute, config.ConnMaxIdleTime)
-	assert.Equal(t, 30*time.Second, config.ConnectionTimeout)
-	assert.True(t, config.HealthCheckEnabled)
-	assert.True(t, config.MetricsEnabled)
+	assert.Equal(t, 100, poolConfig.MaxOpenConns)
+	assert.Equal(t, 10, poolConfig.MaxIdleConns)
+	assert.Equal(t, time.Hour, poolConfig.ConnMaxLifetime)
+	assert.Equal(t, 10*time.Minute, poolConfig.ConnMaxIdleTime)
+	assert.Equal(t, 30*time.Second, poolConfig.ConnectionTimeout)
+	assert.True(t, poolConfig.HealthCheckEnabled)
+	assert.True(t, poolConfig.MetricsEnabled)
 }
 
 func TestConnectionPool_Creation(t *testing.T) {
@@ -62,17 +62,17 @@ func TestConnectionPool_Creation(t *testing.T) {
 		_ = sqlDB.Close()
 	}()
 
-	config := DefaultPoolConfig()
-	config.HealthCheckEnabled = false // Disable for testing
+	poolConfig := DefaultPoolConfig()
+	poolConfig.HealthCheckEnabled = false // Disable for testing
 
-	pool, err := NewConnectionPool(db, config)
+	pool, err := NewConnectionPool(db, poolConfig)
 	require.NoError(t, err)
 	require.NotNil(t, pool)
 
 	defer func() { _ = pool.Close() }()
 
 	assert.Equal(t, db, pool.GetDB())
-	assert.Equal(t, config, pool.GetConfig())
+	assert.Equal(t, poolConfig, pool.GetConfig())
 }
 
 func TestConnectionPool_Metrics(t *testing.T) {
@@ -82,17 +82,17 @@ func TestConnectionPool_Metrics(t *testing.T) {
 		_ = sqlDB.Close()
 	}()
 
-	config := DefaultPoolConfig()
-	config.HealthCheckEnabled = false
-	config.MetricsEnabled = true
+	poolConfig := DefaultPoolConfig()
+	poolConfig.HealthCheckEnabled = false
+	poolConfig.MetricsEnabled = true
 
-	pool, err := NewConnectionPool(db, config)
+	pool, err := NewConnectionPool(db, poolConfig)
 	require.NoError(t, err)
 	defer func() { _ = pool.Close() }()
 
 	// Get initial metrics
 	metrics := pool.GetMetrics()
-	assert.Equal(t, "healthy", metrics.PoolStatus)
+	assert.Equal(t, PoolStatusHealthy, metrics.PoolStatus)
 	assert.Equal(t, int64(0), metrics.TotalQueries)
 
 	// Execute some operations to generate metrics
@@ -116,10 +116,10 @@ func TestConnectionPool_ExecuteWithTimeout(t *testing.T) {
 		_ = sqlDB.Close()
 	}()
 
-	config := DefaultPoolConfig()
-	config.HealthCheckEnabled = false
+	poolConfig := DefaultPoolConfig()
+	poolConfig.HealthCheckEnabled = false
 
-	pool, err := NewConnectionPool(db, config)
+	pool, err := NewConnectionPool(db, poolConfig)
 	require.NoError(t, err)
 	defer func() { _ = pool.Close() }()
 
@@ -146,10 +146,10 @@ func TestConnectionPool_ExecuteWithContext(t *testing.T) {
 		_ = sqlDB.Close()
 	}()
 
-	config := DefaultPoolConfig()
-	config.HealthCheckEnabled = false
+	poolConfig := DefaultPoolConfig()
+	poolConfig.HealthCheckEnabled = false
 
-	pool, err := NewConnectionPool(db, config)
+	pool, err := NewConnectionPool(db, poolConfig)
 	require.NoError(t, err)
 	defer func() { _ = pool.Close() }()
 
@@ -178,11 +178,11 @@ func TestConnectionPool_HealthCheck(t *testing.T) {
 		_ = sqlDB.Close()
 	}()
 
-	config := DefaultPoolConfig()
-	config.HealthCheckEnabled = true
-	config.HealthCheckInterval = 100 * time.Millisecond
+	poolConfig := DefaultPoolConfig()
+	poolConfig.HealthCheckEnabled = true
+	poolConfig.HealthCheckInterval = 100 * time.Millisecond
 
-	pool, err := NewConnectionPool(db, config)
+	pool, err := NewConnectionPool(db, poolConfig)
 	require.NoError(t, err)
 	defer func() { _ = pool.Close() }()
 
@@ -197,7 +197,7 @@ func TestConnectionPool_HealthCheck(t *testing.T) {
 
 	metrics := pool.GetMetrics()
 	assert.True(t, metrics.TotalHealthChecks > 0)
-	assert.Equal(t, "healthy", metrics.HealthCheckStatus)
+	assert.Equal(t, PoolStatusHealthy, metrics.HealthCheckStatus)
 }
 
 func TestConnectionPool_RetryLogic(t *testing.T) {
@@ -207,12 +207,12 @@ func TestConnectionPool_RetryLogic(t *testing.T) {
 		_ = sqlDB.Close()
 	}()
 
-	config := DefaultPoolConfig()
-	config.HealthCheckEnabled = false
-	config.RetryAttempts = 3
-	config.RetryDelay = 10 * time.Millisecond
+	poolConfig := DefaultPoolConfig()
+	poolConfig.HealthCheckEnabled = false
+	poolConfig.RetryAttempts = 3
+	poolConfig.RetryDelay = 10 * time.Millisecond
 
-	pool, err := NewConnectionPool(db, config)
+	pool, err := NewConnectionPool(db, poolConfig)
 	require.NoError(t, err)
 	defer func() { _ = pool.Close() }()
 
@@ -267,10 +267,10 @@ func BenchmarkConnectionPool_ExecuteWithMetrics(b *testing.B) {
 		_ = sqlDB.Close()
 	}()
 
-	config := DefaultPoolConfig()
-	config.HealthCheckEnabled = false
+	poolConfig := DefaultPoolConfig()
+	poolConfig.HealthCheckEnabled = false
 
-	pool, err := NewConnectionPool(db, config)
+	pool, err := NewConnectionPool(db, poolConfig)
 	require.NoError(b, err)
 	defer func() { _ = pool.Close() }()
 
@@ -292,11 +292,11 @@ func BenchmarkConnectionPool_ExecuteWithRetry(b *testing.B) {
 		_ = sqlDB.Close()
 	}()
 
-	config := DefaultPoolConfig()
-	config.HealthCheckEnabled = false
-	config.RetryAttempts = 1 // Minimize retries for benchmark
+	poolConfig := DefaultPoolConfig()
+	poolConfig.HealthCheckEnabled = false
+	poolConfig.RetryAttempts = 1 // Minimize retries for benchmark
 
-	pool, err := NewConnectionPool(db, config)
+	pool, err := NewConnectionPool(db, poolConfig)
 	require.NoError(b, err)
 	defer func() { _ = pool.Close() }()
 

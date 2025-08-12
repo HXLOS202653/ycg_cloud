@@ -229,7 +229,7 @@ func (s *CoreTableIndexStrategy) applyTableIndexes(db *gorm.DB, tableName string
 	indexes := s.GetTableIndexes(tableName)
 
 	for _, index := range indexes {
-		if err := s.createIndexIfNotExists(db, index); err != nil {
+		if err := s.createIndexIfNotExists(db, &index); err != nil {
 			return fmt.Errorf("failed to create index %s: %w", index.Name, err)
 		}
 	}
@@ -238,7 +238,7 @@ func (s *CoreTableIndexStrategy) applyTableIndexes(db *gorm.DB, tableName string
 }
 
 // createIndexIfNotExists 创建索引（如果不存在）
-func (s *CoreTableIndexStrategy) createIndexIfNotExists(db *gorm.DB, index IndexDefinition) error {
+func (s *CoreTableIndexStrategy) createIndexIfNotExists(db *gorm.DB, index *IndexDefinition) error {
 	// 检查索引是否存在
 	var count int64
 	query := `
@@ -269,7 +269,7 @@ func (s *CoreTableIndexStrategy) createIndexIfNotExists(db *gorm.DB, index Index
 }
 
 // buildCreateIndexSQL 构建创建索引的SQL
-func (s *CoreTableIndexStrategy) buildCreateIndexSQL(index IndexDefinition) string {
+func (s *CoreTableIndexStrategy) buildCreateIndexSQL(index *IndexDefinition) string {
 	var sql string
 	columnsStr := fmt.Sprintf("(%s)", joinStrings(index.Columns, ", "))
 

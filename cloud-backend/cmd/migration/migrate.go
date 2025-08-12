@@ -236,7 +236,7 @@ func (mt *MigrationTool) Create(name string) error {
 
 `, name, version, time.Now().Format("2006-01-02 15:04:05"))
 
-	if err := os.WriteFile(upFile, []byte(upTemplate), 0600); err != nil {
+	if err := os.WriteFile(upFile, []byte(upTemplate), 0o600); err != nil {
 		return fmt.Errorf("创建up文件失败: %w", err)
 	}
 
@@ -252,7 +252,7 @@ func (mt *MigrationTool) Create(name string) error {
 
 `, name, version, time.Now().Format("2006-01-02 15:04:05"))
 
-	if err := os.WriteFile(downFile, []byte(downTemplate), 0600); err != nil {
+	if err := os.WriteFile(downFile, []byte(downTemplate), 0o600); err != nil {
 		// 如果down文件创建失败，删除已创建的up文件
 		_ = os.Remove(upFile)
 		return fmt.Errorf("创建down文件失败: %w", err)

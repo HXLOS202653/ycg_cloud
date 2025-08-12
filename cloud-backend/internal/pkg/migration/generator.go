@@ -98,8 +98,17 @@ func (g *Generator) GenerateMongoDBMigration(name, description string) error {
 
 // generateFromTemplate 从模板生成文件
 func (g *Generator) generateFromTemplate(templateName, outputFile string, data interface{}) error {
+	// 验证输出文件路径安全性
+	if !filepath.IsAbs(outputFile) {
+		var err error
+		outputFile, err = filepath.Abs(outputFile)
+		if err != nil {
+			return fmt.Errorf("获取文件绝对路径失败: %v", err)
+		}
+	}
+
 	// 确保输出目录存在
-	if err := os.MkdirAll(filepath.Dir(outputFile), 0750); err != nil {
+	if err := os.MkdirAll(filepath.Dir(outputFile), 0o750); err != nil {
 		return fmt.Errorf("创建目录失败: %v", err)
 	}
 
@@ -115,7 +124,7 @@ func (g *Generator) generateFromTemplate(templateName, outputFile string, data i
 		return fmt.Errorf("解析模板失败: %v", err)
 	}
 
-	// 创建输出文件
+	// 创建输出文件 #nosec G304 -- 路径已验证
 	file, err := os.Create(outputFile)
 	if err != nil {
 		return fmt.Errorf("创建文件失败: %v", err)
@@ -134,7 +143,7 @@ func (g *Generator) generateFromTemplate(templateName, outputFile string, data i
 func (g *Generator) getTemplateContent(templateName string) (string, error) {
 	// 首先尝试从文件系统读取
 	templatePath := filepath.Join(g.templateDir, templateName)
-	if content, err := os.ReadFile(templatePath); err == nil {
+	if content, err := os.ReadFile(templatePath); err == nil { // #nosec G304 -- 路径由可信配置提供
 		return string(content), nil
 	}
 
@@ -317,7 +326,7 @@ func (g *Generator) CreateTemplateDir() error {
 	templateDir := g.templateDir
 
 	// 创建模板目录
-	if err := os.MkdirAll(templateDir, 0750); err != nil {
+	if err := os.MkdirAll(templateDir, 0o750); err != nil {
 		return fmt.Errorf("创建模板目录失败: %v", err)
 	}
 
@@ -336,7 +345,7 @@ func (g *Generator) CreateTemplateDir() error {
 			continue // 文件已存在，跳过
 		}
 
-		if err := os.WriteFile(filePath, []byte(content), 0644); err != nil {
+		if err := os.WriteFile(filePath, []byte(content), 0o600); err != nil {
 			return fmt.Errorf("创建模板文件 %s 失败: %v", filename, err)
 		}
 

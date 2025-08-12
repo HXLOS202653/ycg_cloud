@@ -34,7 +34,7 @@ func (rm *RollbackManager) ValidateRollback(targetVersion string, steps int) ([]
 	// 获取已应用的迁移
 	appliedMigrations, err := rm.tool.getAppliedMigrations()
 	if err != nil {
-		return nil, fmt.Errorf("获取已应用迁移失败: %v", err)
+		return nil, fmt.Errorf("获取已应用迁移失败: %w", err)
 	}
 
 	if len(appliedMigrations) == 0 {
@@ -57,7 +57,7 @@ func (rm *RollbackManager) ValidateRollback(targetVersion string, steps int) ([]
 
 		// 分析回滚安全性
 		if err := rm.analyzeRollbackSafety(info); err != nil {
-			return nil, fmt.Errorf("分析回滚安全性失败: %v", err)
+			return nil, fmt.Errorf("分析回滚安全性失败: %w", err)
 		}
 
 		rollbackInfos = append(rollbackInfos, info)
@@ -151,8 +151,8 @@ func (rm *RollbackManager) CreateRollbackPlan(targetVersion string, steps int) e
 
 	content := rm.generateRollbackPlan(rollbackInfos)
 
-	if err := os.WriteFile(planFile, []byte(content), 0600); err != nil {
-		return fmt.Errorf("创建回滚计划文件失败: %v", err)
+	if err := os.WriteFile(planFile, []byte(content), 0o600); err != nil {
+		return fmt.Errorf("创建回滚计划文件失败: %w", err)
 	}
 
 	fmt.Printf("📝 回滚计划已创建: %s\n", planFile)
@@ -276,7 +276,7 @@ func (rm *RollbackManager) PerformSafeRollback(targetVersion string, steps int, 
 
 	// 创建回滚备份点
 	if err := rm.createRollbackBackup(); err != nil {
-		return fmt.Errorf("创建回滚备份失败: %v", err)
+		return fmt.Errorf("创建回滚备份失败: %w", err)
 	}
 
 	// 执行回滚
@@ -308,8 +308,8 @@ func (rm *RollbackManager) createRollbackBackup() error {
 
 `, time.Now().Format("2006-01-02 15:04:05"), backupFile)
 
-	if err := os.WriteFile(backupFile, []byte(backupInfo), 0644); err != nil {
-		return fmt.Errorf("创建备份标记文件失败: %v", err)
+	if err := os.WriteFile(backupFile, []byte(backupInfo), 0o600); err != nil {
+		return fmt.Errorf("创建备份标记文件失败: %w", err)
 	}
 
 	fmt.Printf("✅ 备份标记已创建: %s\n", backupFile)
@@ -321,7 +321,7 @@ func (rm *RollbackManager) RollbackToLastStable() error {
 	// 获取已应用的迁移
 	appliedMigrations, err := rm.tool.getAppliedMigrations()
 	if err != nil {
-		return fmt.Errorf("获取已应用迁移失败: %v", err)
+		return fmt.Errorf("获取已应用迁移失败: %w", err)
 	}
 
 	if len(appliedMigrations) == 0 {

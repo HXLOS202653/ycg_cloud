@@ -1,6 +1,7 @@
 package migration
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -175,61 +176,98 @@ func scanMySQLMigrations(dir string) ([]*MySQLMigration, error) {
 		return nil, err
 	}
 
+	migrationsMap, err := parseMySQLMigrationFiles(files, dir)
+	if err != nil {
+		return nil, err
+	}
+
+	return convertMySQLMigrationsToSlice(migrationsMap), nil
+}
+
+// parseMySQLMigrationFiles 解析MySQL迁移文件
+func parseMySQLMigrationFiles(files []os.DirEntry, dir string) (map[string]*MySQLMigration, error) {
 	migrationsMap := make(map[string]*MySQLMigration)
 
 	for _, file := range files {
-		if file.IsDir() {
+		if file.IsDir() || !strings.HasSuffix(file.Name(), ".sql") {
 			continue
 		}
 
-		filename := file.Name()
-		if !strings.HasSuffix(filename, ".sql") {
-			continue
+		migration, err := parseSingleMySQLMigrationFile(file.Name(), dir)
+		if err != nil {
+			continue // 跳过无效文件
 		}
 
-		// 解析文件名: {version}_{name}.{up|down}.sql
-		parts := strings.Split(filename, ".")
-		if len(parts) != 3 {
-			continue
-		}
-
-		direction := parts[1]       // up 或 down
-		nameWithVersion := parts[0] // {version}_{name}
-
-		// 分离版本号和名称
-		underscoreIndex := strings.Index(nameWithVersion, "_")
-		if underscoreIndex == -1 {
-			continue
-		}
-
-		version := nameWithVersion[:underscoreIndex]
-		name := nameWithVersion[underscoreIndex+1:]
-
-		// 验证版本号格式
-		if !isValidMigrationVersion(version) {
-			continue
-		}
-
-		migration, exists := migrationsMap[version]
-		if !exists {
-			migration = &MySQLMigration{
-				Version: version,
-				Name:    name,
+		if migration != nil {
+			if existing, exists := migrationsMap[migration.Version]; exists {
+				// 合并up和down文件
+				mergeMySQLMigrationFiles(existing, migration)
+			} else {
+				migrationsMap[migration.Version] = migration
 			}
-			migrationsMap[version] = migration
-		}
-
-		filePath := filepath.Join(dir, filename)
-		switch direction {
-		case "up":
-			migration.UpFile = filePath
-		case "down":
-			migration.DownFile = filePath
 		}
 	}
 
-	// 转换为切片并排序
-	var migrations []*MySQLMigration
+	return migrationsMap, nil
+}
+
+// parseSingleMySQLMigrationFile 解析单个MySQL迁移文件
+func parseSingleMySQLMigrationFile(filename, dir string) (*MySQLMigration, error) {
+	// 解析文件名: {version}_{name}.{up|down}.sql
+	parts := strings.Split(filename, ".")
+	if len(parts) != 3 {
+		return nil, fmt.Errorf("invalid filename format")
+	}
+
+	direction := parts[1]       // up 或 down
+	nameWithVersion := parts[0] // {version}_{name}
+
+	// 分离版本号和名称
+	underscoreIndex := strings.Index(nameWithVersion, "_")
+	if underscoreIndex == -1 {
+		return nil, fmt.Errorf("no underscore in filename")
+	}
+
+	version := nameWithVersion[:underscoreIndex]
+	name := nameWithVersion[underscoreIndex+1:]
+
+	// 验证版本号格式
+	if !isValidMigrationVersion(version) {
+		return nil, fmt.Errorf("invalid version format")
+	}
+
+	migration := &MySQLMigration{
+		Version: version,
+		Name:    name,
+	}
+
+	filePath := filepath.Join(dir, filename)
+	switch direction {
+	case "up":
+		migration.UpFile = filePath
+	case "down":
+		migration.DownFile = filePath
+	default:
+		return nil, fmt.Errorf("invalid direction: %s", direction)
+	}
+
+	return migration, nil
+}
+
+// mergeMySQLMigrationFiles 合并MySQL迁移文件信息
+func mergeMySQLMigrationFiles(existing, new *MySQLMigration) {
+	if new.UpFile != "" {
+		existing.UpFile = new.UpFile
+	}
+	if new.DownFile != "" {
+		existing.DownFile = new.DownFile
+	}
+}
+
+// convertMySQLMigrationsToSlice 转换MySQL迁移映射为排序切片
+func convertMySQLMigrationsToSlice(migrationsMap map[string]*MySQLMigration) []*MySQLMigration {
+	migrations := make([]*MySQLMigration, 0, len(migrationsMap))
+
 	for _, migration := range migrationsMap {
 		// 只包含同时有up和down文件的迁移
 		if migration.UpFile != "" && migration.DownFile != "" {
@@ -242,7 +280,7 @@ func scanMySQLMigrations(dir string) ([]*MySQLMigration, error) {
 		return migrations[i].Version < migrations[j].Version
 	})
 
-	return migrations, nil
+	return migrations
 }
 
 // scanMongoDBMigrations 扫描MongoDB迁移文件

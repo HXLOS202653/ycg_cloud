@@ -14,6 +14,12 @@ import (
 	"github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/config"
 )
 
+const (
+	// Pool status constants
+	PoolStatusHealthy  = "healthy"
+	PoolStatusDegraded = "degraded"
+)
+
 // PoolConfig contains advanced connection pool configuration.
 type PoolConfig struct {
 	// Basic pool settings
@@ -110,9 +116,9 @@ type ConnectionPool struct {
 }
 
 // NewConnectionPool creates a new enhanced connection pool.
-func NewConnectionPool(db *gorm.DB, config *PoolConfig) (*ConnectionPool, error) {
-	if config == nil {
-		config = DefaultPoolConfig()
+func NewConnectionPool(db *gorm.DB, poolConfig *PoolConfig) (*ConnectionPool, error) {
+	if poolConfig == nil {
+		poolConfig = DefaultPoolConfig()
 	}
 
 	sqlDB, err := db.DB()
@@ -121,7 +127,7 @@ func NewConnectionPool(db *gorm.DB, config *PoolConfig) (*ConnectionPool, error)
 	}
 
 	// Configure basic pool settings
-	if err := configurePoolSettings(sqlDB, config); err != nil {
+	if err := configurePoolSettings(sqlDB, poolConfig); err != nil {
 		return nil, fmt.Errorf("failed to configure pool settings: %w", err)
 	}
 
@@ -130,31 +136,31 @@ func NewConnectionPool(db *gorm.DB, config *PoolConfig) (*ConnectionPool, error)
 	pool := &ConnectionPool{
 		db:             db,
 		sqlDB:          sqlDB,
-		config:         config,
-		metrics:        &PoolMetrics{Uptime: time.Now(), PoolStatus: "healthy"},
+		config:         poolConfig,
+		metrics:        &PoolMetrics{Uptime: time.Now(), PoolStatus: PoolStatusHealthy},
 		healthStopChan: make(chan struct{}),
 		ctx:            ctx,
 		cancel:         cancel,
 	}
 
 	// Start health monitoring if enabled
-	if config.HealthCheckEnabled {
+	if poolConfig.HealthCheckEnabled {
 		pool.startHealthMonitoring()
 	}
 
-	log.Printf("Enhanced connection pool initialized with config: %+v", config)
+	log.Printf("Enhanced connection pool initialized with poolConfig: %+v", poolConfig)
 	return pool, nil
 }
 
 // configurePoolSettings applies pool configuration to sql.DB.
-func configurePoolSettings(sqlDB *sql.DB, config *PoolConfig) error {
-	sqlDB.SetMaxOpenConns(config.MaxOpenConns)
-	sqlDB.SetMaxIdleConns(config.MaxIdleConns)
-	sqlDB.SetConnMaxLifetime(config.ConnMaxLifetime)
-	sqlDB.SetConnMaxIdleTime(config.ConnMaxIdleTime)
+func configurePoolSettings(sqlDB *sql.DB, poolConfig *PoolConfig) error {
+	sqlDB.SetMaxOpenConns(poolConfig.MaxOpenConns)
+	sqlDB.SetMaxIdleConns(poolConfig.MaxIdleConns)
+	sqlDB.SetConnMaxLifetime(poolConfig.ConnMaxLifetime)
+	sqlDB.SetConnMaxIdleTime(poolConfig.ConnMaxIdleTime)
 
 	// Test the connection
-	ctx, cancel := context.WithTimeout(context.Background(), config.ConnectionTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), poolConfig.ConnectionTimeout)
 	defer cancel()
 
 	if err := sqlDB.PingContext(ctx); err != nil {
@@ -162,7 +168,7 @@ func configurePoolSettings(sqlDB *sql.DB, config *PoolConfig) error {
 	}
 
 	log.Printf("Connection pool configured: MaxOpen=%d, MaxIdle=%d, MaxLifetime=%v, MaxIdleTime=%v",
-		config.MaxOpenConns, config.MaxIdleConns, config.ConnMaxLifetime, config.ConnMaxIdleTime)
+		poolConfig.MaxOpenConns, poolConfig.MaxIdleConns, poolConfig.ConnMaxLifetime, poolConfig.ConnMaxIdleTime)
 
 	return nil
 }
@@ -207,14 +213,14 @@ func (cp *ConnectionPool) performHealthCheck() {
 		cp.metrics.LastError = err.Error()
 
 		if cp.metrics.ConsecutiveFailures >= 3 {
-			cp.metrics.PoolStatus = "degraded"
+			cp.metrics.PoolStatus = PoolStatusDegraded
 		}
 
 		log.Printf("Health check failed: %v (consecutive failures: %d)", err, cp.metrics.ConsecutiveFailures)
 	} else {
 		cp.metrics.ConsecutiveFailures = 0
-		cp.metrics.HealthCheckStatus = "healthy"
-		cp.metrics.PoolStatus = "healthy"
+		cp.metrics.HealthCheckStatus = PoolStatusHealthy
+		cp.metrics.PoolStatus = PoolStatusHealthy
 		cp.metrics.LastError = ""
 	}
 }
@@ -366,7 +372,7 @@ func (cp *ConnectionPool) GetConfig() *PoolConfig {
 func (cp *ConnectionPool) IsHealthy() bool {
 	cp.metricsLock.RLock()
 	defer cp.metricsLock.RUnlock()
-	return cp.metrics.PoolStatus == "healthy"
+	return cp.metrics.PoolStatus == PoolStatusHealthy
 }
 
 // CreatePoolFromConfig creates a connection pool from MySQL config.

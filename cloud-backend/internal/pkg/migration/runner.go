@@ -437,7 +437,7 @@ func (r *Runner) executeMySQLMigration(mig *MySQLMigration, direction Direction)
 	}
 
 	// 读取SQL文件
-	sqlContent, err := os.ReadFile(sqlFile)
+	sqlContent, err := os.ReadFile(sqlFile) // #nosec G304 -- 路径来自可信的迁移文件
 	if err != nil {
 		return fmt.Errorf("读取SQL文件失败: %v", err)
 	}

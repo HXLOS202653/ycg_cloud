@@ -71,20 +71,20 @@ func (td *TestDatabase) Cleanup() {
 }
 
 // CreateTestMigration creates a test migration file.
-func CreateTestMigration(t *testing.T, dir, version, name string, upSQL, downSQL string) {
+func CreateTestMigration(t *testing.T, dir, version, name, upSQL, downSQL string) {
 	// Create migration directory if it doesn't exist
 	migrationDir := filepath.Join(dir, "mysql")
-	err := os.MkdirAll(migrationDir, 0755)
+	err := os.MkdirAll(migrationDir, 0o750)
 	require.NoError(t, err)
 
 	// Create up migration file
 	upFile := filepath.Join(migrationDir, fmt.Sprintf("%s_%s.up.sql", version, name))
-	err = os.WriteFile(upFile, []byte(upSQL), 0644)
+	err = os.WriteFile(upFile, []byte(upSQL), 0o600)
 	require.NoError(t, err)
 
 	// Create down migration file
 	downFile := filepath.Join(migrationDir, fmt.Sprintf("%s_%s.down.sql", version, name))
-	err = os.WriteFile(downFile, []byte(downSQL), 0644)
+	err = os.WriteFile(downFile, []byte(downSQL), 0o600)
 	require.NoError(t, err)
 }
 
@@ -92,7 +92,7 @@ func CreateTestMigration(t *testing.T, dir, version, name string, upSQL, downSQL
 func CreateTestMongoMigration(t *testing.T, dir, version, name, script string) {
 	// Create migration directory if it doesn't exist
 	migrationDir := filepath.Join(dir, "mongodb")
-	err := os.MkdirAll(migrationDir, 0755)
+	err := os.MkdirAll(migrationDir, 0o750)
 	require.NoError(t, err)
 
 	// Create migration file
@@ -280,11 +280,11 @@ func CreateMockMigrationFiles(t *testing.T, baseDir string, files []MockMigratio
 
 		// Create directory if needed
 		dir := filepath.Dir(fullPath)
-		err := os.MkdirAll(dir, 0755)
+		err := os.MkdirAll(dir, 0o750)
 		require.NoError(t, err)
 
 		// Write file
-		err = os.WriteFile(fullPath, []byte(file.Content), 0644)
+		err = os.WriteFile(fullPath, []byte(file.Content), 0o600)
 		require.NoError(t, err)
 	}
 }
@@ -332,7 +332,7 @@ func isValidTableName(tableName string) bool {
 			return false
 		}
 	}
-	return len(tableName) > 0 && len(tableName) <= 64 // MySQL table name limit
+	return tableName != "" && len(tableName) <= 64 // MySQL table name limit
 }
 
 // BackupDatabase creates a backup of the test database.
