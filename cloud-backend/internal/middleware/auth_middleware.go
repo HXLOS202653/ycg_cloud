@@ -113,7 +113,7 @@ func OptionalAuthMiddleware(authService *service.AuthService) gin.HandlerFunc {
 }
 
 // RequireRole creates middleware to check user roles
-func RequireRole(authService *service.AuthService, allowedRoles ...string) gin.HandlerFunc {
+func RequireRole(_ *service.AuthService, allowedRoles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// First ensure user is authenticated
 		userRole, exists := c.Get("role")

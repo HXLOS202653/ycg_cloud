@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/config"
 	"github.com/golang-jwt/jwt/v5"
+
+	"github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/config"
 )
 
 // AuthService handles authentication operations

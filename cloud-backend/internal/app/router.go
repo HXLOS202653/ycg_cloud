@@ -37,35 +37,32 @@ func (s *Server) addRoutes(r *gin.Engine) {
 
 	// Public authentication routes (no auth required)
 	auth := v1.Group("/auth")
-	{
-		auth.POST("/register", authHandler.Register)
-		auth.POST("/login", authHandler.Login)
-		auth.POST("/refresh", authHandler.RefreshToken)
-		auth.POST("/forgot-password", s.placeholder("forgot password"))
-		auth.POST("/reset-password", s.placeholder("reset password"))
+	auth.POST("/register", authHandler.Register)
+	auth.POST("/login", authHandler.Login)
+	auth.POST("/refresh", authHandler.RefreshToken)
+	auth.POST("/forgot-password", s.placeholder("forgot password"))
+	auth.POST("/reset-password", s.placeholder("reset password"))
 
-		// Email verification routes
-		auth.POST("/send-verification", authHandler.SendVerificationCode)
-		auth.POST("/verify-email", authHandler.VerifyEmail)
-		auth.POST("/resend-verification", authHandler.ResendVerificationCode)
-	}
+	// Email verification routes
+	auth.POST("/send-verification", authHandler.SendVerificationCode)
+	auth.POST("/verify-email", authHandler.VerifyEmail)
+	auth.POST("/resend-verification", authHandler.ResendVerificationCode)
 
 	// Protected routes (require authentication)
 	protected := v1.Group("")
 	protected.Use(middleware.AuthMiddleware(authService))
-	{
-		// User profile routes
-		protected.GET("/auth/profile", authHandler.GetCurrentUser)
-		protected.POST("/auth/logout", authHandler.Logout)
-		protected.POST("/auth/logout-all", authHandler.LogoutAll)
-		protected.GET("/auth/sessions", authHandler.GetActiveSessions)
 
-		// Two-factor authentication routes
-		protected.POST("/auth/2fa/setup", authHandler.Setup2FA)
-		protected.POST("/auth/2fa/enable", authHandler.Enable2FA)
-		protected.POST("/auth/2fa/disable", authHandler.Disable2FA)
-		protected.POST("/auth/2fa/backup-codes", authHandler.RegenerateBackupCodes)
-	}
+	// User profile routes
+	protected.GET("/auth/profile", authHandler.GetCurrentUser)
+	protected.POST("/auth/logout", authHandler.Logout)
+	protected.POST("/auth/logout-all", authHandler.LogoutAll)
+	protected.GET("/auth/sessions", authHandler.GetActiveSessions)
+
+	// Two-factor authentication routes
+	protected.POST("/auth/2fa/setup", authHandler.Setup2FA)
+	protected.POST("/auth/2fa/enable", authHandler.Enable2FA)
+	protected.POST("/auth/2fa/disable", authHandler.Disable2FA)
+	protected.POST("/auth/2fa/backup-codes", authHandler.RegenerateBackupCodes)
 
 	// Public 2FA verification route (no auth required for temporary verification)
 	auth.POST("/2fa/verify", authHandler.Verify2FA)

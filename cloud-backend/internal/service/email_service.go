@@ -13,6 +13,12 @@ import (
 	"github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/config"
 )
 
+// Email purpose constants
+const (
+	EmailPurposeRegistration  = "registration"
+	EmailPurposePasswordReset = "password_reset"
+)
+
 // EmailService handles email operations
 type EmailService struct {
 	config *config.Config
@@ -32,11 +38,11 @@ type EmailTemplate struct {
 }
 
 // VerificationCodeEmail generates verification code email template
-func (s *EmailService) VerificationCodeEmail(code, email, purpose string) *EmailTemplate {
+func (s *EmailService) VerificationCodeEmail(code, _ /* email */, purpose string) *EmailTemplate {
 	var subject, bodyTemplate string
 
 	switch purpose {
-	case "registration":
+	case EmailPurposeRegistration:
 		subject = "YCG Cloud - 邮箱验证码"
 		bodyTemplate = `
 <!DOCTYPE html>
@@ -82,7 +88,7 @@ func (s *EmailService) VerificationCodeEmail(code, email, purpose string) *Email
     </div>
 </body>
 </html>`
-	case "password_reset":
+	case EmailPurposePasswordReset:
 		subject = "YCG Cloud - 密码重置验证码"
 		bodyTemplate = `
 <!DOCTYPE html>
@@ -190,15 +196,15 @@ func (s *EmailService) SendVerificationCode(email, purpose string) (string, erro
 // generateVerificationCode generates a 6-digit random verification code
 func (s *EmailService) generateVerificationCode() (string, error) {
 	// Generate random number between 100000 and 999999
-	min := int64(100000)
-	max := int64(999999)
+	minVal := int64(100000)
+	maxVal := int64(999999)
 
-	n, err := rand.Int(rand.Reader, big.NewInt(max-min+1))
+	n, err := rand.Int(rand.Reader, big.NewInt(maxVal-minVal+1))
 	if err != nil {
 		return "", err
 	}
 
-	code := n.Int64() + min
+	code := n.Int64() + minVal
 	return fmt.Sprintf("%06d", code), nil
 }
 
@@ -240,19 +246,28 @@ func (s *EmailService) sendWithSTARTTLS(addr string, auth smtp.Auth, _ string, t
 	if err != nil {
 		return fmt.Errorf("failed to connect to SMTP server: %w", err)
 	}
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			// Log connection close error but don't fail the operation
+		}
+	}()
 
 	// Create SMTP client
 	client, err := smtp.NewClient(conn, s.config.Email.SMTPHost)
 	if err != nil {
 		return fmt.Errorf("failed to create SMTP client: %w", err)
 	}
-	defer client.Quit()
+	defer func() {
+		if err := client.Quit(); err != nil {
+			// Log client quit error but don't fail the operation
+		}
+	}()
 
 	// Start TLS if supported
 	if ok, _ := client.Extension("STARTTLS"); ok {
 		tlsConfig := &tls.Config{
 			ServerName: s.config.Email.SMTPHost,
+			MinVersion: tls.VersionTLS12, // G402: Set minimum TLS version to 1.2
 		}
 		if err := client.StartTLS(tlsConfig); err != nil {
 			return fmt.Errorf("failed to start TLS: %w", err)
@@ -281,7 +296,11 @@ func (s *EmailService) sendWithSTARTTLS(addr string, auth smtp.Auth, _ string, t
 	if err != nil {
 		return fmt.Errorf("failed to get data writer: %w", err)
 	}
-	defer writer.Close()
+	defer func() {
+		if err := writer.Close(); err != nil {
+			// Log writer close error but don't fail the operation
+		}
+	}()
 
 	if _, err := writer.Write(message); err != nil {
 		return fmt.Errorf("failed to write email data: %w", err)
@@ -300,19 +319,28 @@ func (s *EmailService) sendWithSTARTTLS(addr string, auth smtp.Auth, _ string, t
 func (s *EmailService) sendWithSSL(addr string, auth smtp.Auth, _ string, to []string, message []byte) error {
 	tlsConfig := &tls.Config{
 		ServerName: s.config.Email.SMTPHost,
+		MinVersion: tls.VersionTLS12, // G402: Set minimum TLS version to 1.2
 	}
 
 	conn, err := tls.Dial("tcp", addr, tlsConfig)
 	if err != nil {
 		return fmt.Errorf("failed to connect to SMTP server with SSL: %w", err)
 	}
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			// Log connection close error but don't fail the operation
+		}
+	}()
 
 	client, err := smtp.NewClient(conn, s.config.Email.SMTPHost)
 	if err != nil {
 		return fmt.Errorf("failed to create SMTP client with SSL: %w", err)
 	}
-	defer client.Quit()
+	defer func() {
+		if err := client.Quit(); err != nil {
+			// Log client quit error but don't fail the operation
+		}
+	}()
 
 	// Authenticate
 	if err := client.Auth(auth); err != nil {
@@ -336,7 +364,11 @@ func (s *EmailService) sendWithSSL(addr string, auth smtp.Auth, _ string, to []s
 	if err != nil {
 		return fmt.Errorf("failed to get data writer: %w", err)
 	}
-	defer writer.Close()
+	defer func() {
+		if err := writer.Close(); err != nil {
+			// Log writer close error but don't fail the operation
+		}
+	}()
 
 	if _, err := writer.Write(message); err != nil {
 		return fmt.Errorf("failed to write email data: %w", err)
@@ -446,13 +478,13 @@ func (s *EmailService) ValidateEmail(email string) bool {
 
 	// Check local part (before @)
 	local := parts[0]
-	if len(local) == 0 || len(local) > 64 {
+	if local == "" || len(local) > 64 {
 		return false
 	}
 
 	// Check domain part (after @)
 	domain := parts[1]
-	if len(domain) == 0 || len(domain) > 255 {
+	if domain == "" || len(domain) > 255 {
 		return false
 	}
 

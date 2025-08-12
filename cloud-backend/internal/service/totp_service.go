@@ -149,7 +149,7 @@ func (s *TOTPService) ValidateBackupCode(code string) bool {
 
 	// Check if all characters are alphanumeric
 	for _, char := range cleanCode {
-		if !((char >= 'A' && char <= 'Z') || (char >= '0' && char <= '9')) {
+		if (char < 'A' || char > 'Z') && (char < '0' || char > '9') {
 			return false
 		}
 	}

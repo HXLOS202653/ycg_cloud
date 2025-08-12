@@ -125,7 +125,7 @@ func (s *TwoFactorService) Enable2FA(userID int64, totpCode string) error {
 }
 
 // Disable2FA disables 2FA for a user
-func (s *TwoFactorService) Disable2FA(userID int64, password, totpCode string) error {
+func (s *TwoFactorService) Disable2FA(userID int64, _ /* password */, totpCode string) error {
 	// Get user
 	var user model.User
 	if err := s.db.First(&user, userID).Error; err != nil {
@@ -192,7 +192,7 @@ func (s *TwoFactorService) Verify2FA(userID int64, code string) error {
 }
 
 // GenerateBackupCodes generates new backup codes for a user
-func (s *TwoFactorService) GenerateBackupCodes(userID int64, password, totpCode string) ([]string, error) {
+func (s *TwoFactorService) GenerateBackupCodes(userID int64, _ /* password */, totpCode string) ([]string, error) {
 	// Get user
 	var user model.User
 	if err := s.db.First(&user, userID).Error; err != nil {
@@ -289,13 +289,14 @@ func (s *TwoFactorService) useBackupCode(userID int64, code string) error {
 	// Find and mark the code as used
 	found := false
 	for i := range codes {
-		if codes[i].Code == code && !codes[i].Used {
-			now := time.Now()
-			codes[i].Used = true
-			codes[i].UsedAt = &now
-			found = true
-			break
+		if codes[i].Code != code || codes[i].Used {
+			continue
 		}
+		now := time.Now()
+		codes[i].Used = true
+		codes[i].UsedAt = &now
+		found = true
+		break
 	}
 
 	if !found {

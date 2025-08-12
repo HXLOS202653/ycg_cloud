@@ -9,8 +9,9 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/config"
 	"golang.org/x/crypto/bcrypt"
+
+	"github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/config"
 )
 
 // PasswordService handles password security operations
@@ -221,7 +222,7 @@ func (s *PasswordService) checkPasswordComplexity(password string) int {
 	if regexp.MustCompile(`[A-Z]`).MatchString(password) {
 		charTypes++
 	}
-	if regexp.MustCompile(`[0-9]`).MatchString(password) {
+	if regexp.MustCompile(`\d`).MatchString(password) {
 		charTypes++
 	}
 	if regexp.MustCompile(`[^a-zA-Z0-9]`).MatchString(password) {
@@ -260,7 +261,7 @@ func (s *PasswordService) isCommonPassword(password string) bool {
 
 	passwordLower := strings.ToLower(password)
 	for _, common := range commonPasswords {
-		if passwordLower == strings.ToLower(common) {
+		if strings.EqualFold(passwordLower, common) {
 			return true
 		}
 	}
@@ -369,10 +370,12 @@ func (s *PasswordService) GenerateSecurePassword(length int) (string, error) {
 	password := make([]byte, 0, length)
 
 	// Add one from each required set
-	password = append(password, lowercase[s.secureRandom(len(lowercase))])
-	password = append(password, uppercase[s.secureRandom(len(uppercase))])
-	password = append(password, numbers[s.secureRandom(len(numbers))])
-	password = append(password, specials[s.secureRandom(len(specials))])
+	password = append(password,
+		lowercase[s.secureRandom(len(lowercase))],
+		uppercase[s.secureRandom(len(uppercase))],
+		numbers[s.secureRandom(len(numbers))],
+		specials[s.secureRandom(len(specials))],
+	)
 
 	// Fill remaining length with random characters from all sets
 	allChars := lowercase + uppercase + numbers + specials
@@ -390,14 +393,14 @@ func (s *PasswordService) GenerateSecurePassword(length int) (string, error) {
 }
 
 // secureRandom generates a secure random number using crypto/rand
-func (s *PasswordService) secureRandom(max int) int {
+func (s *PasswordService) secureRandom(maxVal int) int {
 	// This is a simplified implementation
 	// In production, you should use crypto/rand properly
-	return int(time.Now().UnixNano()) % max
+	return int(time.Now().UnixNano()) % maxVal
 }
 
 // CheckPasswordHistory checks if password was used recently
-func (s *PasswordService) CheckPasswordHistory(userID int64, newPasswordHash string, historyHashes []string) error {
+func (s *PasswordService) CheckPasswordHistory(_ /* userID */ int64, newPasswordHash string, historyHashes []string) error {
 	// Check against recent password hashes
 	for _, oldHash := range historyHashes {
 		if err := s.VerifyPassword(oldHash, newPasswordHash); err == nil {

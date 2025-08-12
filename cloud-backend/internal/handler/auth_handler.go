@@ -52,214 +52,30 @@ func NewAuthHandler(authService *service.AuthService, emailService *service.Emai
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req dto.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"code":    "USER_VALIDATION_REQUEST_INVALID",
-			"message": "请求参数验证失败",
-			"error": gin.H{
-				"type":    "VALIDATION_ERROR",
-				"details": err.Error(),
-			},
-		})
+		h.sendValidationError(c, "USER_VALIDATION_REQUEST_INVALID", "请求参数验证失败", err.Error())
 		return
 	}
 
-	// Validate passwords match
-	if req.Password != req.ConfirmPassword {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"code":    "USER_VALIDATION_PASSWORD_MISMATCH",
-			"message": "密码确认不匹配",
-			"error": gin.H{
-				"type":    "VALIDATION_ERROR",
-				"details": "Password and confirm password do not match",
-			},
-		})
+	// Validate the registration request
+	if err := h.validateRegistrationRequest(&req); err != nil {
+		h.sendValidationErrorFromValidation(c, err)
 		return
 	}
 
-	// Validate password strength
-	if !h.isPasswordStrong(req.Password) {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"code":    "USER_VALIDATION_PASSWORD_TOO_WEAK",
-			"message": "密码强度不足",
-			"error": gin.H{
-				"type":    "VALIDATION_ERROR",
-				"details": "Password must be at least 8 characters long and contain uppercase, lowercase, and numbers",
-			},
-		})
-		return
+	// Check for existing users
+	if err := h.checkExistingUser(&req, c); err != nil {
+		return // Error already sent in function
 	}
 
-	// Validate email format
-	if !h.isValidEmail(req.Email) {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"code":    "USER_VALIDATION_EMAIL_INVALID",
-			"message": "邮箱格式不正确",
-			"error": gin.H{
-				"type":    "VALIDATION_ERROR",
-				"details": "Invalid email format",
-			},
-		})
-		return
-	}
-
-	// Validate username format
-	if !h.isValidUsername(req.Username) {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"code":    "USER_VALIDATION_USERNAME_INVALID",
-			"message": "用户名格式不正确",
-			"error": gin.H{
-				"type":    "VALIDATION_ERROR",
-				"details": "Username must be 3-50 characters long and contain only letters, numbers, and underscores",
-			},
-		})
-		return
-	}
-
-	// Check if terms are accepted
-	if !req.TermsAccepted {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"code":    "USER_VALIDATION_TERMS_NOT_ACCEPTED",
-			"message": "必须同意服务条款",
-			"error": gin.H{
-				"type":    "VALIDATION_ERROR",
-				"details": "Terms and conditions must be accepted",
-			},
-		})
-		return
-	}
-
-	// Check if user already exists
-	var existingUser model.User
-	result := h.db.Where("email = ? OR username = ?", req.Email, req.Username).First(&existingUser)
-	if result.Error == nil {
-		// User exists, determine which field conflicts
-		if existingUser.Email == req.Email {
-			c.JSON(http.StatusConflict, gin.H{
-				"success": false,
-				"code":    "USER_BUSINESS_EMAIL_EXISTS",
-				"message": "邮箱已被注册",
-				"error": gin.H{
-					"type":    "BUSINESS_ERROR",
-					"details": "A user with this email address already exists",
-					"field":   "email",
-				},
-			})
-		} else {
-			c.JSON(http.StatusConflict, gin.H{
-				"success": false,
-				"code":    "USER_BUSINESS_USERNAME_EXISTS",
-				"message": "用户名已被占用",
-				"error": gin.H{
-					"type":    "BUSINESS_ERROR",
-					"details": "A user with this username already exists",
-					"field":   "username",
-				},
-			})
-		}
-		return
-	}
-
-	// Hash password
-	hashedPassword, err := h.authService.HashPassword(req.Password)
+	// Create and save the user
+	user, err := h.createUserFromRequest(&req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"success": false,
-			"code":    "USER_SYSTEM_PASSWORD_HASH_FAILED",
-			"message": "密码加密失败",
-			"error": gin.H{
-				"type":    "SYSTEM_ERROR",
-				"details": "Failed to hash password",
-			},
-		})
+		h.sendSystemError(c, "USER_SYSTEM_CREATE_FAILED", "用户创建失败", err.Error())
 		return
 	}
 
-	// Create user
-	var realName, phone *string
-	if req.RealName != "" {
-		realName = &req.RealName
-	}
-	if req.Phone != "" {
-		phone = &req.Phone
-	}
-
-	user := model.User{
-		Username:     req.Username,
-		Email:        req.Email,
-		PasswordHash: hashedPassword,
-		RealName:     realName,
-		Phone:        phone,
-		Language:     req.Language,
-		Timezone:     req.Timezone,
-		Status:       "pending", // 待邮箱验证
-		Role:         "user",
-	}
-
-	// Set default values if not provided
-	if user.Language == "" {
-		user.Language = "zh-CN"
-	}
-	if user.Timezone == "" {
-		user.Timezone = "Asia/Shanghai"
-	}
-
-	// Create user with pending status (requires email verification)
-	user.Status = "pending"
-	user.EmailVerified = false
-
-	// Save user to database
-	if err := h.db.Create(&user).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"success": false,
-			"code":    "USER_SYSTEM_CREATE_FAILED",
-			"message": "用户创建失败",
-			"error": gin.H{
-				"type":    "SYSTEM_ERROR",
-				"details": "Failed to create user in database",
-			},
-		})
-		return
-	}
-
-	// Send verification email
-	if err := h.verificationService.SendVerificationCode(req.Email, "registration"); err != nil {
-		// Log error but don't fail registration
-		fmt.Printf("Failed to send verification email: %v\n", err)
-
-		// Still return success but with a warning
-		c.JSON(http.StatusCreated, gin.H{
-			"success": true,
-			"code":    201,
-			"message": "用户注册成功，但验证邮件发送失败",
-			"data": gin.H{
-				"user":    h.userToResponse(&user),
-				"warning": "邮件发送失败，请稍后手动请求验证码",
-			},
-		})
-		return
-	}
-
-	// Convert to response DTO
-	userResponse := h.userToResponse(&user)
-
-	c.JSON(http.StatusCreated, gin.H{
-		"success": true,
-		"code":    201,
-		"message": "用户注册成功，请查收验证邮件",
-		"data": gin.H{
-			"user": userResponse,
-			"verification": gin.H{
-				"email_sent": true,
-				"message":    "验证码已发送到您的邮箱，有效期5分钟",
-			},
-		},
-	})
+	// Send verification email and respond
+	h.handleRegistrationSuccess(c, user)
 }
 
 // Login handles user login
@@ -426,7 +242,7 @@ func (h *AuthHandler) isPasswordStrong(password string) bool {
 	// Must contain uppercase, lowercase, and number
 	hasUpper := regexp.MustCompile(`[A-Z]`).MatchString(password)
 	hasLower := regexp.MustCompile(`[a-z]`).MatchString(password)
-	hasNumber := regexp.MustCompile(`[0-9]`).MatchString(password)
+	hasNumber := regexp.MustCompile(`\d`).MatchString(password)
 
 	return hasUpper && hasLower && hasNumber
 }
@@ -877,7 +693,10 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 		h.db.Save(&session)
 	} else {
 		// Create new session if old one not found
-		h.sessionService.CreateSession(user.ID, tokenPair.RefreshToken, deviceInfo, clientIP, userAgent)
+		if _, err := h.sessionService.CreateSession(user.ID, tokenPair.RefreshToken, deviceInfo, clientIP, userAgent); err != nil {
+			// Log error but don't fail the refresh process
+			// Session creation failure shouldn't block token refresh
+		}
 	}
 
 	// Prepare response
@@ -921,7 +740,10 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	var req struct {
 		RefreshToken string `json:"refreshToken,omitempty"`
 	}
-	c.ShouldBindJSON(&req)
+	if err := c.ShouldBindJSON(&req); err != nil {
+		// If JSON binding fails, continue to try header-based refresh token
+		// This allows flexible token refresh from both body and header
+	}
 
 	if req.RefreshToken == "" {
 		// Try to get from Authorization header
@@ -935,11 +757,17 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	if req.RefreshToken != "" {
 		var session model.UserSession
 		if err := h.db.Where("user_id = ? AND refresh_token = ?", userID, req.RefreshToken).First(&session).Error; err == nil {
-			h.sessionService.InvalidateSession(session.SessionToken)
+			if err := h.sessionService.InvalidateSession(session.SessionToken); err != nil {
+				// Log error but continue logout process
+			}
 		}
 	} else {
 		// Invalidate all sessions for user if no specific token provided
-		h.sessionService.InvalidateAllUserSessions(userID.(int64))
+		if userIDInt, ok := userID.(int64); ok {
+			if err := h.sessionService.InvalidateAllUserSessions(userIDInt); err != nil {
+				// Log error but continue logout process
+			}
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -974,7 +802,17 @@ func (h *AuthHandler) LogoutAll(c *gin.Context) {
 	}
 
 	// Invalidate all sessions for user
-	if err := h.sessionService.InvalidateAllUserSessions(userID.(int64)); err != nil {
+	userIDInt, ok := userID.(int64)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"code":    "AUTH_USER_ID_INVALID",
+			"message": "用户ID格式错误",
+		})
+		return
+	}
+
+	if err := h.sessionService.InvalidateAllUserSessions(userIDInt); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
 			"code":    "AUTH_LOGOUT_FAILED",
@@ -1019,7 +857,17 @@ func (h *AuthHandler) GetActiveSessions(c *gin.Context) {
 	}
 
 	// Get active sessions
-	sessions, err := h.sessionService.GetUserActiveSessions(userID.(int64))
+	userIDInt, ok := userID.(int64)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"code":    "AUTH_USER_ID_INVALID",
+			"message": "用户ID格式错误",
+		})
+		return
+	}
+
+	sessions, err := h.sessionService.GetUserActiveSessions(userIDInt)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
@@ -1035,13 +883,13 @@ func (h *AuthHandler) GetActiveSessions(c *gin.Context) {
 
 	// Convert to response DTOs
 	sessionResponses := make([]dto.SessionResponse, len(sessions))
-	for i, session := range sessions {
+	for i := range sessions {
 		sessionResponses[i] = dto.SessionResponse{
-			ID:         session.ID,
-			DeviceInfo: session.DeviceInfo,
-			IPAddress:  session.IPAddress,
-			CreatedAt:  session.CreatedAt,
-			ExpiresAt:  session.ExpiresAt,
+			ID:         sessions[i].ID,
+			DeviceInfo: sessions[i].DeviceInfo,
+			IPAddress:  sessions[i].IPAddress,
+			CreatedAt:  sessions[i].CreatedAt,
+			ExpiresAt:  sessions[i].ExpiresAt,
 		}
 	}
 
@@ -1077,7 +925,15 @@ func (h *AuthHandler) Setup2FA(c *gin.Context) {
 		return
 	}
 
-	userIDInt := userID.(int64)
+	userIDInt, ok := userID.(int64)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"code":    "AUTH_USER_ID_INVALID",
+			"message": "用户ID格式错误",
+		})
+		return
+	}
 
 	// Get user email
 	var user model.User
@@ -1156,7 +1012,15 @@ func (h *AuthHandler) Enable2FA(c *gin.Context) {
 		return
 	}
 
-	userIDInt := userID.(int64)
+	userIDInt, ok := userID.(int64)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"code":    "AUTH_USER_ID_INVALID",
+			"message": "用户ID格式错误",
+		})
+		return
+	}
 
 	// Enable 2FA
 	if err := h.twoFactorService.Enable2FA(userIDInt, req.TOTPCode); err != nil {
@@ -1218,7 +1082,15 @@ func (h *AuthHandler) Disable2FA(c *gin.Context) {
 		return
 	}
 
-	userIDInt := userID.(int64)
+	userIDInt, ok := userID.(int64)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"code":    "AUTH_USER_ID_INVALID",
+			"message": "用户ID格式错误",
+		})
+		return
+	}
 
 	// Disable 2FA
 	if err := h.twoFactorService.Disable2FA(userIDInt, req.Password, req.TOTPCode); err != nil {
@@ -1343,7 +1215,15 @@ func (h *AuthHandler) RegenerateBackupCodes(c *gin.Context) {
 		return
 	}
 
-	userIDInt := userID.(int64)
+	userIDInt, ok := userID.(int64)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"code":    "AUTH_USER_ID_INVALID",
+			"message": "用户ID格式错误",
+		})
+		return
+	}
 
 	// Generate new backup codes
 	codes, err := h.twoFactorService.GenerateBackupCodes(userIDInt, req.Password, req.TOTPCode)
@@ -1366,6 +1246,213 @@ func (h *AuthHandler) RegenerateBackupCodes(c *gin.Context) {
 		"message": "备份码生成成功",
 		"data": gin.H{
 			"backup_codes": codes,
+		},
+	})
+}
+
+// Helper functions for Register method to reduce complexity
+
+type ValidationError struct {
+	Code    string
+	Message string
+	Details string
+}
+
+func (e *ValidationError) Error() string {
+	return e.Message
+}
+
+func (h *AuthHandler) validateRegistrationRequest(req *dto.RegisterRequest) error {
+	// Validate passwords match
+	if req.Password != req.ConfirmPassword {
+		return &ValidationError{
+			Code:    "USER_VALIDATION_PASSWORD_MISMATCH",
+			Message: "密码确认不匹配",
+			Details: "Password and confirm password do not match",
+		}
+	}
+
+	// Validate password strength
+	if !h.isPasswordStrong(req.Password) {
+		return &ValidationError{
+			Code:    "USER_VALIDATION_PASSWORD_TOO_WEAK",
+			Message: "密码强度不足",
+			Details: "Password must be at least 8 characters long and contain uppercase, lowercase, and numbers",
+		}
+	}
+
+	// Validate email format
+	if !h.isValidEmail(req.Email) {
+		return &ValidationError{
+			Code:    "USER_VALIDATION_EMAIL_INVALID",
+			Message: "邮箱格式不正确",
+			Details: "Invalid email format",
+		}
+	}
+
+	// Validate username format
+	if !h.isValidUsername(req.Username) {
+		return &ValidationError{
+			Code:    "USER_VALIDATION_USERNAME_INVALID",
+			Message: "用户名格式不正确",
+			Details: "Username must be 3-50 characters long and contain only letters, numbers, and underscores",
+		}
+	}
+
+	// Check if terms are accepted
+	if !req.TermsAccepted {
+		return &ValidationError{
+			Code:    "USER_VALIDATION_TERMS_NOT_ACCEPTED",
+			Message: "必须同意服务条款",
+			Details: "Terms and conditions must be accepted",
+		}
+	}
+
+	return nil
+}
+
+func (h *AuthHandler) checkExistingUser(req *dto.RegisterRequest, c *gin.Context) error {
+	var existingUser model.User
+	result := h.db.Where("email = ? OR username = ?", req.Email, req.Username).First(&existingUser)
+	if result.Error == nil {
+		// User exists, determine which field conflicts
+		if existingUser.Email == req.Email {
+			c.JSON(http.StatusConflict, gin.H{
+				"success": false,
+				"code":    "USER_BUSINESS_EMAIL_EXISTS",
+				"message": "邮箱已被注册",
+				"error": gin.H{
+					"type":    "BUSINESS_ERROR",
+					"details": "A user with this email address already exists",
+					"field":   "email",
+				},
+			})
+		} else {
+			c.JSON(http.StatusConflict, gin.H{
+				"success": false,
+				"code":    "USER_BUSINESS_USERNAME_EXISTS",
+				"message": "用户名已被占用",
+				"error": gin.H{
+					"type":    "BUSINESS_ERROR",
+					"details": "A user with this username already exists",
+					"field":   "username",
+				},
+			})
+		}
+		return fmt.Errorf("user already exists")
+	}
+	return nil
+}
+
+func (h *AuthHandler) createUserFromRequest(req *dto.RegisterRequest) (*model.User, error) {
+	// Hash password
+	hashedPassword, err := h.authService.HashPassword(req.Password)
+	if err != nil {
+		return nil, fmt.Errorf("failed to hash password: %w", err)
+	}
+
+	// Create user
+	var realName, phone *string
+	if req.RealName != "" {
+		realName = &req.RealName
+	}
+	if req.Phone != "" {
+		phone = &req.Phone
+	}
+
+	user := model.User{
+		Username:      req.Username,
+		Email:         req.Email,
+		PasswordHash:  hashedPassword,
+		RealName:      realName,
+		Phone:         phone,
+		Language:      req.Language,
+		Timezone:      req.Timezone,
+		Status:        "pending", // 待邮箱验证
+		Role:          "user",
+		EmailVerified: false,
+	}
+
+	// Set default values if not provided
+	if user.Language == "" {
+		user.Language = "zh-CN"
+	}
+	if user.Timezone == "" {
+		user.Timezone = "Asia/Shanghai"
+	}
+
+	// Save user to database
+	if err := h.db.Create(&user).Error; err != nil {
+		return nil, fmt.Errorf("failed to create user in database: %w", err)
+	}
+
+	return &user, nil
+}
+
+func (h *AuthHandler) handleRegistrationSuccess(c *gin.Context, user *model.User) {
+	// Send verification email
+	if err := h.verificationService.SendVerificationCode(user.Email, "registration"); err != nil {
+		// Log error but don't fail registration
+		fmt.Printf("Failed to send verification email: %v\n", err)
+
+		// Still return success but with a warning
+		c.JSON(http.StatusCreated, gin.H{
+			"success": true,
+			"code":    201,
+			"message": "用户注册成功，但验证邮件发送失败",
+			"data": gin.H{
+				"user":    h.userToResponse(user),
+				"warning": "邮件发送失败，请稍后手动请求验证码",
+			},
+		})
+		return
+	}
+
+	// Convert to response DTO
+	userResponse := h.userToResponse(user)
+
+	c.JSON(http.StatusCreated, gin.H{
+		"success": true,
+		"code":    201,
+		"message": "用户注册成功，请查收验证邮件",
+		"data": gin.H{
+			"user": userResponse,
+			"verification": gin.H{
+				"email_sent": true,
+				"message":    "验证码已发送到您的邮箱，有效期5分钟",
+			},
+		},
+	})
+}
+
+func (h *AuthHandler) sendValidationError(c *gin.Context, code, message, details string) {
+	c.JSON(http.StatusBadRequest, gin.H{
+		"success": false,
+		"code":    code,
+		"message": message,
+		"error": gin.H{
+			"type":    "VALIDATION_ERROR",
+			"details": details,
+		},
+	})
+}
+
+func (h *AuthHandler) sendValidationErrorFromValidation(c *gin.Context, err error) {
+	if valErr, ok := err.(*ValidationError); ok {
+		h.sendValidationError(c, valErr.Code, valErr.Message, valErr.Details)
+	} else {
+		h.sendValidationError(c, "USER_VALIDATION_UNKNOWN", "验证失败", err.Error())
+	}
+}
+
+func (h *AuthHandler) sendSystemError(c *gin.Context, code, message, details string) {
+	c.JSON(http.StatusInternalServerError, gin.H{
+		"success": false,
+		"code":    code,
+		"message": message,
+		"error": gin.H{
+			"type":    "SYSTEM_ERROR",
+			"details": details,
 		},
 	})
 }

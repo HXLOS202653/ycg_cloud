@@ -100,7 +100,7 @@ func (up *UserPermission) IsValid() bool {
 }
 
 // BeforeCreate sets default values before creating a role
-func (r *Role) BeforeCreate(tx *gorm.DB) error {
+func (r *Role) BeforeCreate(_ *gorm.DB) error {
 	if r.Name == "" {
 		return gorm.ErrInvalidData
 	}
@@ -111,7 +111,7 @@ func (r *Role) BeforeCreate(tx *gorm.DB) error {
 }
 
 // BeforeCreate sets default values before creating a permission
-func (p *Permission) BeforeCreate(tx *gorm.DB) error {
+func (p *Permission) BeforeCreate(_ *gorm.DB) error {
 	if p.Name == "" || p.Resource == "" || p.Action == "" {
 		return gorm.ErrInvalidData
 	}

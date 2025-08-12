@@ -61,7 +61,7 @@ func (User) TableName() string {
 }
 
 // BeforeCreate hooks runs before creating a user
-func (u *User) BeforeCreate(tx *gorm.DB) error {
+func (u *User) BeforeCreate(_ *gorm.DB) error {
 	// Set default values if not provided
 	if u.StorageQuota == 0 {
 		u.StorageQuota = 10737418240 // 10GB

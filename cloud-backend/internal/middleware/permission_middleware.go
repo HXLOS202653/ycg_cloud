@@ -162,7 +162,7 @@ func RequireAllPermissions(permissionService *service.PermissionService, permiss
 }
 
 // RequireSpecificRole creates a middleware that requires specific role
-func RequireSpecificRole(permissionService *service.PermissionService, allowedRoles ...string) gin.HandlerFunc {
+func RequireSpecificRole(_ *service.PermissionService, allowedRoles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userRole, exists := c.Get("role")
 		if !exists {
@@ -211,7 +211,7 @@ func RequireSpecificRole(permissionService *service.PermissionService, allowedRo
 }
 
 // RequireOwnership creates a middleware that requires resource ownership
-func RequireOwnership(permissionService *service.PermissionService, resourceType string) gin.HandlerFunc {
+func RequireOwnership(_ *service.PermissionService, resourceType string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID, exists := GetUserID(c)
 		if !exists {

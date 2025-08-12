@@ -3,13 +3,15 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
+
+	"gorm.io/gorm"
 
 	"github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/config"
 	"github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/model"
 	"github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/pkg/database"
-	"gorm.io/gorm"
 )
 
 // PermissionService handles permission and authorization operations
@@ -121,12 +123,12 @@ func (s *PermissionService) checkUserPermissions(userID int64, resource, action 
 	hasAllow := false
 	hasDeny := false
 
-	for _, perm := range userPerms {
-		if !perm.IsValid() {
+	for i := range userPerms {
+		if !userPerms[i].IsValid() {
 			continue // Skip expired permissions
 		}
 
-		switch perm.Effect {
+		switch userPerms[i].Effect {
 		case model.EffectDeny:
 			hasDeny = true
 		case model.EffectAllow:
@@ -161,7 +163,8 @@ func (s *PermissionService) checkRolePermissions(roleName, resource, action stri
 	}
 
 	// Check role permissions
-	for _, perm := range role.Permissions {
+	for i := range role.Permissions {
+		perm := &role.Permissions[i]
 		if perm.Resource == resource && (perm.Action == action || perm.Action == model.ActionAll) {
 			if perm.Effect == model.EffectAllow {
 				return &PermissionCheckResult{
@@ -263,14 +266,14 @@ func (s *PermissionService) GetUserPermissions(userID int64) ([]model.Permission
 	permMap := make(map[int64]model.Permission)
 
 	// Add role permissions
-	for _, perm := range rolePerms {
-		permMap[perm.ID] = perm
+	for i := range rolePerms {
+		permMap[rolePerms[i].ID] = rolePerms[i]
 	}
 
 	// Add/override with user-specific permissions
-	for _, userPerm := range userPerms {
-		if userPerm.IsValid() {
-			permMap[userPerm.Permission.ID] = userPerm.Permission
+	for i := range userPerms {
+		if userPerms[i].IsValid() {
+			permMap[userPerms[i].Permission.ID] = userPerms[i].Permission
 		}
 	}
 
@@ -289,7 +292,7 @@ func (s *PermissionService) InitializeSystemPermissions() error {
 	systemPerms := model.GetSystemPermissions()
 	for _, perm := range systemPerms {
 		var existing model.Permission
-		if err := s.db.Where("name = ?", perm.Name).First(&existing).Error; err == gorm.ErrRecordNotFound {
+		if err := s.db.Where("name = ?", perm.Name).First(&existing).Error; errors.Is(err, gorm.ErrRecordNotFound) {
 			if err := s.db.Create(&perm).Error; err != nil {
 				return fmt.Errorf("failed to create permission %s: %w", perm.Name, err)
 			}
@@ -300,7 +303,7 @@ func (s *PermissionService) InitializeSystemPermissions() error {
 	systemRoles := model.GetSystemRoles()
 	for _, role := range systemRoles {
 		var existing model.Role
-		if err := s.db.Where("name = ?", role.Name).First(&existing).Error; err == gorm.ErrRecordNotFound {
+		if err := s.db.Where("name = ?", role.Name).First(&existing).Error; errors.Is(err, gorm.ErrRecordNotFound) {
 			if err := s.db.Create(&role).Error; err != nil {
 				return fmt.Errorf("failed to create role %s: %w", role.Name, err)
 			}
@@ -345,11 +348,7 @@ func (s *PermissionService) assignDefaultRolePermissions() error {
 	guestPerms := []string{
 		"file:read", "folder:read", "share:read",
 	}
-	if err := s.assignPermissionsToRole(model.RoleGuest, guestPerms); err != nil {
-		return err
-	}
-
-	return nil
+	return s.assignPermissionsToRole(model.RoleGuest, guestPerms)
 }
 
 // assignPermissionsToRole assigns permissions to a role
@@ -407,7 +406,9 @@ func (s *PermissionService) getPermissionFromCache(key string) *PermissionCheckR
 // cachePermissionResult stores permission result in cache
 func (s *PermissionService) cachePermissionResult(key string, result *PermissionCheckResult, ttl time.Duration) {
 	ctx := context.Background()
-	s.redisManager.SetStruct(ctx, key, result, ttl)
+	if err := s.redisManager.SetStruct(ctx, key, result, ttl); err != nil {
+		// Log cache error but don't fail the permission check
+	}
 }
 
 // clearUserPermissionCache clears all cached permissions for a user
@@ -419,7 +420,9 @@ func (s *PermissionService) clearUserPermissionCache(userID int64) {
 	// In production, you might want to use Redis SCAN for better performance
 	keys := []string{} // You would need to implement key scanning here
 	for _, key := range keys {
-		s.redisManager.Del(ctx, key)
+		if err := s.redisManager.Del(ctx, key); err != nil {
+			// Log cache deletion error but continue
+		}
 	}
 }
 

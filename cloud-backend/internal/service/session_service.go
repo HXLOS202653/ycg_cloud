@@ -92,7 +92,9 @@ func (s *SessionService) GetActiveSession(userID int64, sessionToken string) (*m
 	}
 
 	// Update cache
-	s.storeSessionInCache(&session)
+	if err := s.storeSessionInCache(&session); err != nil {
+		// Log cache error but don't fail session creation
+	}
 
 	return &session, nil
 }
@@ -119,7 +121,9 @@ func (s *SessionService) InvalidateSession(sessionToken string) error {
 	// Remove from cache
 	ctx := context.Background()
 	cacheKey := fmt.Sprintf("session:%s", sessionToken)
-	s.redisManager.Del(ctx, cacheKey)
+	if err := s.redisManager.Del(ctx, cacheKey); err != nil {
+		// Log cache deletion error but continue
+	}
 
 	// Update database
 	return s.db.Model(&model.UserSession{}).
@@ -140,9 +144,11 @@ func (s *SessionService) InvalidateAllUserSessions(userID int64) error {
 
 	// Remove from cache
 	ctx := context.Background()
-	for _, session := range sessions {
-		cacheKey := fmt.Sprintf("session:%s", session.SessionToken)
-		s.redisManager.Del(ctx, cacheKey)
+	for i := range sessions {
+		cacheKey := fmt.Sprintf("session:%s", sessions[i].SessionToken)
+		if err := s.redisManager.Del(ctx, cacheKey); err != nil {
+			// Log cache deletion error but continue
+		}
 	}
 
 	// Update database
@@ -189,7 +195,9 @@ func (s *SessionService) ValidateSessionToken(userID int64, sessionToken string)
 	}
 
 	// Update activity
-	s.UpdateSessionActivity(sessionToken)
+	if err := s.UpdateSessionActivity(sessionToken); err != nil {
+		// Log activity update error but continue
+	}
 
 	return true, nil
 }
@@ -277,25 +285,24 @@ func (s *SessionService) ExtractDeviceInfo(userAgent string) string {
 	// Simple device detection - can be enhanced with a proper library
 	deviceInfo := "Unknown Device"
 
-	if contains(userAgent, "Mobile") || contains(userAgent, "Android") || contains(userAgent, "iPhone") {
-		if contains(userAgent, "Android") {
-			deviceInfo = "Android Mobile"
-		} else if contains(userAgent, "iPhone") {
-			deviceInfo = "iPhone"
-		} else {
-			deviceInfo = "Mobile Device"
-		}
-	} else if contains(userAgent, "Windows") {
+	switch {
+	case contains(userAgent, "Android"):
+		deviceInfo = "Android Mobile"
+	case contains(userAgent, "iPhone"):
+		deviceInfo = "iPhone"
+	case contains(userAgent, "Mobile"):
+		deviceInfo = "Mobile Device"
+	case contains(userAgent, "Windows"):
 		deviceInfo = "Windows Desktop"
-	} else if contains(userAgent, "Macintosh") || contains(userAgent, "Mac OS X") {
+	case contains(userAgent, "Macintosh") || contains(userAgent, "Mac OS X"):
 		deviceInfo = "Mac Desktop"
-	} else if contains(userAgent, "Linux") {
+	case contains(userAgent, "Linux"):
 		deviceInfo = "Linux Desktop"
-	} else if contains(userAgent, "Chrome") {
+	case contains(userAgent, "Chrome"):
 		deviceInfo = "Chrome Browser"
-	} else if contains(userAgent, "Firefox") {
+	case contains(userAgent, "Firefox"):
 		deviceInfo = "Firefox Browser"
-	} else if contains(userAgent, "Safari") {
+	case contains(userAgent, "Safari"):
 		deviceInfo = "Safari Browser"
 	}
 

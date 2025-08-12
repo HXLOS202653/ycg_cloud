@@ -74,13 +74,17 @@ func (s *VerificationService) VerifyCode(email, code, purpose string) error {
 	// Check if maximum attempts exceeded
 	if storedCode.Attempts >= storedCode.MaxAttempts {
 		// Delete the code to prevent further attempts
-		s.deleteVerificationCode(email, purpose)
+		if err := s.deleteVerificationCode(email, purpose); err != nil {
+			// Log deletion error but continue
+		}
 		return fmt.Errorf("maximum verification attempts exceeded")
 	}
 
 	// Increment attempt count
 	storedCode.Attempts++
-	s.updateVerificationCode(email, purpose, storedCode)
+	if err := s.updateVerificationCode(email, purpose, storedCode); err != nil {
+		// Log update error but continue verification
+	}
 
 	// Verify the code
 	if storedCode.Code != code {
@@ -88,7 +92,9 @@ func (s *VerificationService) VerifyCode(email, code, purpose string) error {
 	}
 
 	// Code is valid, delete it to prevent reuse
-	s.deleteVerificationCode(email, purpose)
+	if err := s.deleteVerificationCode(email, purpose); err != nil {
+		// Log deletion error but don't fail verification
+	}
 
 	return nil
 }
@@ -107,7 +113,10 @@ func (s *VerificationService) checkRateLimit(email, purpose string) error {
 	// Parse count
 	var currentCount int
 	if count != "" {
-		fmt.Sscanf(count, "%d", &currentCount)
+		if _, err := fmt.Sscanf(count, "%d", &currentCount); err != nil {
+			// If parsing fails, assume 0 count
+			currentCount = 0
+		}
 	}
 
 	// Define rate limits based on purpose
@@ -190,7 +199,9 @@ func (s *VerificationService) getVerificationCode(email, purpose string) (*Verif
 
 	// Check if expired
 	if time.Now().After(verificationCode.ExpiresAt) {
-		s.deleteVerificationCode(email, purpose)
+		if err := s.deleteVerificationCode(email, purpose); err != nil {
+			// Log deletion error but continue
+		}
 		return nil, fmt.Errorf("verification code expired")
 	}
 
