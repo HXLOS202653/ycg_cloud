@@ -337,6 +337,7 @@ func (s *PasswordService) GetPasswordSecurityTips() []string {
 
 // Helper functions to reduce ValidatePassword complexity
 
+// CharacterTypes represents the character type analysis result for password validation
 type CharacterTypes struct {
 	HasUpper   bool
 	HasLower   bool

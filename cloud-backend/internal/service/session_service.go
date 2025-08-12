@@ -125,6 +125,7 @@ func (s *SessionService) InvalidateSession(sessionToken string) error {
 	cacheKey := fmt.Sprintf("session:%s", sessionToken)
 	if err := s.redisManager.Del(ctx, cacheKey); err != nil {
 		// Log cache deletion error but continue
+		fmt.Printf("Failed to delete session cache: %v\n", err)
 	}
 
 	// Update database
@@ -150,6 +151,7 @@ func (s *SessionService) InvalidateAllUserSessions(userID int64) error {
 		cacheKey := fmt.Sprintf("session:%s", sessions[i].SessionToken)
 		if err := s.redisManager.Del(ctx, cacheKey); err != nil {
 			// Log cache deletion error but continue
+			fmt.Printf("Failed to delete session cache %s: %v\n", cacheKey, err)
 		}
 	}
 
@@ -199,6 +201,7 @@ func (s *SessionService) ValidateSessionToken(userID int64, sessionToken string)
 	// Update activity
 	if err := s.UpdateSessionActivity(sessionToken); err != nil {
 		// Log activity update error but continue
+		fmt.Printf("Failed to update session activity: %v\n", err)
 	}
 
 	return true, nil

@@ -6,9 +6,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/gin-gonic/gin"
+
 	"github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/model"
 	"github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/service"
-	"github.com/gin-gonic/gin"
 )
 
 // PermissionMiddleware creates a middleware that checks permissions

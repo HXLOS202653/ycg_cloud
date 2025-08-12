@@ -9,11 +9,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
 	"github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/dto"
 	"github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/model"
 	"github.com/HXLOS202653/ycg_cloud/cloud-backend/internal/service"
-	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 // AuthHandler handles authentication-related HTTP requests
