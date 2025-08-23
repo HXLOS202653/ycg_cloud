@@ -1,0 +1,336 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # 每天凌晨2点运行完整的代码质量检查
+    - cron: '0 2 * * *'
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.23'
+        
+    - name: Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+          
+    - name: Download dependencies
+      run: go mod download
+      
+    - name: Install quality tools
+      run: |
+        go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+        go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
+        go install github.com/fzipp/gocyclo/cmd/gocyclo@latest
+        go install golang.org/x/tools/cmd/goimports@latest
+        
+    - name: Run code formatting check
+      run: |
+        # 检查代码格式
+        if [ "$(gofmt -l . | wc -l)" -gt 0 ]; then
+          echo "以下文件需要格式化:"
+          gofmt -l .
+          exit 1
+        fi
+        
+        # 检查import格式
+        if [ "$(goimports -l . | wc -l)" -gt 0 ]; then
+          echo "以下文件需要import格式化:"
+          goimports -l .
+          exit 1
+        fi
+        
+    - name: Run tests
+      run: go test -v ./...
+      
+    - name: Run tests with coverage
+      run: |
+        go test -v -coverprofile=coverage.out ./...
+        go tool cover -html=coverage.out -o coverage.html
+      
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.out
+        flags: unittests
+        name: codecov-umbrella
+        
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.23'
+        
+    - name: Install quality tools
+      run: |
+        go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+        go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
+        go install github.com/fzipp/gocyclo/cmd/gocyclo@latest
+        
+    - name: Run golangci-lint
+      run: |
+        golangci-lint run --config .golangci.yml --out-format github-actions
+        
+    - name: Run security scan
+      run: |
+        gosec -conf configs/gosec.json -fmt json -out reports/gosec-report.json ./...
+        gosec -conf configs/gosec.json ./...
+        
+    - name: Run complexity check
+      run: |
+        mkdir -p reports
+        gocyclo -over 10 . > reports/gocyclo-report.txt || true
+        echo "复杂度检查完成，报告已生成"
+        if [ -s reports/gocyclo-report.txt ]; then
+          echo "发现高复杂度函数:"
+          cat reports/gocyclo-report.txt
+          # 检查是否有复杂度超过15的函数（CI失败阈值）
+          if gocyclo -over 15 . | grep -q .; then
+            echo "错误: 发现复杂度超过15的函数，请重构"
+            exit 1
+          fi
+        fi
+        
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [test, lint]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.23'
+        
+    - name: Build application
+      run: |
+        mkdir -p bin
+        go build -v -o bin/app ./main.go
+        
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-artifacts
+        path: bin/
+        
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.23'
+        
+    - name: Install gosec
+      run: go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
+      
+    - name: Create reports directory
+      run: mkdir -p reports
+      
+    - name: Run Gosec Security Scanner
+      run: |
+        gosec -conf configs/gosec.json -fmt json -out reports/gosec-report.json ./...
+        gosec -conf configs/gosec.json ./...
+        
+    - name: Upload security report
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-report
+        path: reports/gosec-report.json
+        
+  docker:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: [test, lint]
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+        
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: |
+          ${{ secrets.DOCKER_USERNAME }}/ycg-cloud:latest
+          ${{ secrets.DOCKER_USERNAME }}/ycg-cloud:${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        
+  quality:
+    name: Code Quality Report
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.23'
+        
+    - name: Install quality tools
+      run: |
+        go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+        go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
+        go install github.com/fzipp/gocyclo/cmd/gocyclo@latest
+        go install golang.org/x/tools/cmd/goimports@latest
+        
+    - name: Create reports directory
+      run: mkdir -p reports
+      
+    - name: Run comprehensive quality checks
+      run: |
+        echo "=== 代码质量检查报告 ===" > reports/quality-summary.txt
+        echo "检查时间: $(date)" >> reports/quality-summary.txt
+        echo "" >> reports/quality-summary.txt
+        
+        # 代码格式检查
+        echo "1. 代码格式检查" >> reports/quality-summary.txt
+        if [ "$(gofmt -l . | wc -l)" -gt 0 ]; then
+          echo "   ❌ 发现格式问题:" >> reports/quality-summary.txt
+          gofmt -l . >> reports/quality-summary.txt
+        else
+          echo "   ✅ 代码格式正确" >> reports/quality-summary.txt
+        fi
+        echo "" >> reports/quality-summary.txt
+        
+        # Import格式检查
+        echo "2. Import格式检查" >> reports/quality-summary.txt
+        if [ "$(goimports -l . | wc -l)" -gt 0 ]; then
+          echo "   ❌ 发现import问题:" >> reports/quality-summary.txt
+          goimports -l . >> reports/quality-summary.txt
+        else
+          echo "   ✅ Import格式正确" >> reports/quality-summary.txt
+        fi
+        echo "" >> reports/quality-summary.txt
+        
+        # Lint检查
+        echo "3. Lint检查" >> reports/quality-summary.txt
+        if golangci-lint run --config .golangci.yml --out-format line-number > reports/golangci-lint.txt 2>&1; then
+          echo "   ✅ 无Lint问题" >> reports/quality-summary.txt
+        else
+          echo "   ❌ 发现Lint问题，详见golangci-lint.txt" >> reports/quality-summary.txt
+        fi
+        echo "" >> reports/quality-summary.txt
+        
+        # 安全检查
+        echo "4. 安全检查" >> reports/quality-summary.txt
+        if gosec -conf configs/gosec.json -fmt json -out reports/gosec-report.json ./... 2>/dev/null; then
+          issues=$(jq '.Stats.found // 0' reports/gosec-report.json 2>/dev/null || echo "0")
+          if [ "$issues" = "0" ]; then
+            echo "   ✅ 无安全问题" >> reports/quality-summary.txt
+          else
+            echo "   ❌ 发现 $issues 个安全问题，详见gosec-report.json" >> reports/quality-summary.txt
+          fi
+        else
+          echo "   ⚠️  安全检查执行失败" >> reports/quality-summary.txt
+        fi
+        echo "" >> reports/quality-summary.txt
+        
+        # 复杂度检查
+        echo "5. 复杂度检查" >> reports/quality-summary.txt
+        if gocyclo -over 10 . > reports/gocyclo-report.txt 2>/dev/null; then
+          if [ -s reports/gocyclo-report.txt ]; then
+            count=$(wc -l < reports/gocyclo-report.txt)
+            echo "   ⚠️  发现 $count 个高复杂度函数 (>10)，详见gocyclo-report.txt" >> reports/quality-summary.txt
+            
+            # 检查极高复杂度
+            if gocyclo -over 15 . > reports/gocyclo-critical.txt 2>/dev/null && [ -s reports/gocyclo-critical.txt ]; then
+              critical_count=$(wc -l < reports/gocyclo-critical.txt)
+              echo "   ❌ 发现 $critical_count 个极高复杂度函数 (>15)，需要立即重构" >> reports/quality-summary.txt
+            fi
+          else
+            echo "   ✅ 所有函数复杂度合理 (≤10)" >> reports/quality-summary.txt
+          fi
+        else
+          echo "   ✅ 所有函数复杂度合理 (≤10)" >> reports/quality-summary.txt
+        fi
+        echo "" >> reports/quality-summary.txt
+        
+        # 测试覆盖率
+        echo "6. 测试覆盖率" >> reports/quality-summary.txt
+        if go test -coverprofile=coverage.out ./... > /dev/null 2>&1; then
+          coverage=$(go tool cover -func=coverage.out | grep total | awk '{print $3}')
+          echo "   📊 测试覆盖率: $coverage" >> reports/quality-summary.txt
+        else
+          echo "   ⚠️  无法获取测试覆盖率" >> reports/quality-summary.txt
+        fi
+        echo "" >> reports/quality-summary.txt
+        
+        echo "=== 检查完成 ===" >> reports/quality-summary.txt
+        
+        # 显示摘要
+        cat reports/quality-summary.txt
+        
+    - name: Upload quality reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: quality-reports
+        path: |
+          reports/
+          coverage.out
+          coverage.html
+        retention-days: 30
+        
+    - name: Comment PR with quality report
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          try {
+            const report = fs.readFileSync('reports/quality-summary.txt', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '## 🔍 代码质量检查报告\n\n```\n' + report + '\n```'
+            });
+          } catch (error) {
+            console.log('无法读取质量报告文件:', error.message);
+          }

@@ -1,0 +1,268 @@
+# golangci-lint配置文件
+# 详细配置文档: https://golangci-lint.run/usage/configuration/
+
+run:
+  # 超时时间
+  timeout: 5m
+  # 要检查的Go版本
+  go: "1.23"
+
+# 输出配置
+output:
+  # 输出格式
+  formats:
+    - format: colored-line-number
+  # 打印linter名称
+  print-issued-lines: true
+  print-linter-name: true
+  sort-results: true
+
+# 问题配置
+issues:
+  # 跳过的目录
+  exclude-dirs:
+    - vendor
+    - .git
+    - bin
+    - tmp
+  # 跳过的文件
+  exclude-files:
+    - ".*\\.pb\\.go$"
+    - ".*\\.gen\\.go$"
+  # 去重
+  uniq-by-line: true
+  # 排除使用默认排除规则
+  exclude-use-default: false
+  # 排除的规则
+  exclude:
+    # errcheck: Almost all programs ignore errors on these functions and in most cases it's ok
+    - Error return value of .((os\\.)?std(out|err)\\..*|.*Close|.*Flush|os\\.Remove(All)?|.*print.*|os\\.(Un)?Setenv). is not checked
+  # 排除的规则（按linter）
+  exclude-rules:
+    # 排除测试文件中的某些检查
+    - path: _test\\.go
+      linters:
+        - gomnd
+        - funlen
+        - goconst
+        - gocyclo
+        - cyclop
+        - dupl
+        - gosec
+    # 排除main.go中的某些检查
+    - path: main\\.go
+      linters:
+        - funlen
+    # 排除生成的文件
+    - path: \\.pb\\.go
+      linters:
+        - all
+  # 最大issues数量，0表示无限制
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  # 新代码检查
+  new: false
+  # 修复模式
+  fix: false
+
+# linters配置
+linters:
+  # 启用的linters
+  enable:
+    # 默认启用的linters
+    - errcheck # 检查未处理的错误
+    - gosimple # 简化代码建议
+    - govet # go vet检查
+    - ineffassign # 检查无效赋值
+    - staticcheck # 静态分析
+    - typecheck # 类型检查
+    - unused # 检查未使用的代码
+
+    # 代码格式化
+    - gofmt # 代码格式化检查
+    - goimports # import格式化检查
+    # - gofumpt # 更严格的gofmt (暂时禁用due to version conflicts)
+
+    # 安全检查
+    - gosec # 安全漏洞检查
+
+    # 复杂度检查
+    - gocyclo # 圈复杂度检查
+    - cyclop # 包和函数的圈复杂度
+    - funlen # 函数长度检查
+
+    # 代码质量
+    - gocritic # 代码质量检查
+    - revive # golint的替代品
+    - stylecheck # 代码风格检查
+    - unconvert # 不必要的类型转换
+    - unparam # 未使用的函数参数
+    - misspell # 拼写检查
+    - prealloc # 预分配slice检查
+    - goconst # 重复字符串检查
+    - dupl # 重复代码检查
+
+    # 错误处理
+    - errorlint # 错误处理最佳实践
+    - wrapcheck # 错误包装检查
+
+    # 性能
+    - bodyclose # HTTP响应体关闭检查
+    - noctx # HTTP请求context检查
+
+    # 命名规范
+    - predeclared # 预声明标识符检查
+    - varnamelen # 变量名长度检查
+
+  # 禁用的linters
+  disable: []
+
+# linters设置
+linters-settings:
+  # gofmt设置
+  gofmt:
+    simplify: true
+
+  # goimports设置
+  goimports:
+    local-prefixes: ycg_cloud
+
+  # gosec设置
+  gosec:
+    # 要包含的规则
+    includes:
+      - G101 # 查找硬编码凭据
+      - G102 # 绑定到所有接口
+      - G103 # 审计不安全块的使用
+      - G104 # 审计未检查的错误
+      - G106 # 审计ssh.InsecureIgnoreHostKey的使用
+      - G107 # Url作为污点输入提供给HTTP请求
+      - G108 # 通过变量进行分析的自动生成HTML
+      - G109 # 潜在的整数溢出
+      - G110 # 潜在的DoS漏洞
+      - G201 # SQL查询构造使用格式字符串
+      - G202 # SQL查询构造使用字符串连接
+      - G203 # 在HTML模板中使用未转义的数据
+      - G204 # 审计命令执行
+      - G301 # 创建目录时权限过于宽松
+      - G302 # chmod文件权限
+      - G303 # 创建临时文件时权限过于宽松
+      - G304 # 文件路径作为污点输入提供
+      - G305 # 文件遍历
+      - G306 # 写入文件时权限过于宽松
+      - G307 # 延迟文件关闭方法返回的错误
+      - G401 # 检测DES、RC4、MD5或SHA1的使用
+      - G402 # 查找错误的TLS连接设置
+      - G403 # 确保最小RSA密钥长度为2048位
+      - G404 # 不安全的随机数生成器
+      - G501 # 导入黑名单：crypto/md5
+      - G502 # 导入黑名单：crypto/des
+      - G503 # 导入黑名单：crypto/rc4
+      - G504 # 导入黑名单：net/http/cgi
+      - G505 # 导入黑名单：crypto/sha1
+      - G601 # 隐式内存别名
+    # 要排除的规则
+    excludes:
+      - G115 # 潜在的整数溢出（过于严格）
+    # 配置
+    config:
+      G306: "0644"
+
+  # gocyclo设置
+  gocyclo:
+    # 最小复杂度阈值
+    min-complexity: 10
+
+  # cyclop设置
+  cyclop:
+    # 包的最大复杂度
+    max-complexity: 10
+    # 跳过测试文件
+    skip-tests: true
+
+  # funlen设置
+  funlen:
+    # 函数最大行数
+    lines: 100
+    # 函数最大语句数
+    statements: 50
+
+  # gocritic设置
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+    disabled-checks:
+      - dupImport # https://github.com/go-critic/go-critic/issues/845
+      - ifElseChain
+      - octalLiteral
+      - whyNoLint
+      - wrapperFunc
+
+  # revive设置
+  revive:
+    min-confidence: 0
+    rules:
+      - name: atomic
+      - name: line-length-limit
+        arguments: [150]
+      - name: argument-limit
+        arguments: [5]
+      - name: cyclomatic
+        arguments: [10]
+      - name: max-public-structs
+        arguments: [6]
+
+  # misspell设置
+  misspell:
+    locale: US
+
+  # varnamelen设置
+  varnamelen:
+    # 最小变量名长度
+    min-name-length: 2
+    # 忽略的变量名
+    ignore-names:
+      - err
+      - ok
+      - id
+      - i
+      - j
+      - k
+      - v
+      - t
+      - db
+      - tx
+      - ctx
+    # 忽略的声明
+    ignore-decls:
+      - c echo.Context
+      - t testing.T
+      - f *os.File
+
+  # dupl设置
+  dupl:
+    # 重复代码的最小token数
+    threshold: 100
+
+  # goconst设置
+  goconst:
+    # 最小字符串长度
+    min-len: 3
+    # 最小出现次数
+    min-occurrences: 3
+    # 忽略测试文件
+    ignore-tests: true
+
+  # wrapcheck设置
+  wrapcheck:
+    # 忽略的包
+    ignoreSigs:
+      - .Errorf(
+      - errors.New(
+      - errors.Unwrap(
+      - .Wrap(
+      - .Wrapf(

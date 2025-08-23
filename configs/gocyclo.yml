@@ -1,0 +1,213 @@
+# gocyclo 复杂度检查配置
+# 圈复杂度（Cyclomatic Complexity）检查配置
+
+# 全局配置
+global:
+  # 默认复杂度阈值
+  default_threshold: 10
+  
+  # 输出格式: text, json, xml
+  output_format: "text"
+  
+  # 是否显示详细信息
+  verbose: true
+  
+  # 是否只显示超过阈值的函数
+  over_only: true
+  
+  # 排序方式: complexity, name, file
+  sort_by: "complexity"
+  
+  # 是否降序排列
+  descending: true
+
+# 复杂度阈值配置
+thresholds:
+  # 低复杂度 (1-5): 简单函数，易于理解和维护
+  low:
+    min: 1
+    max: 5
+    level: "info"
+    description: "简单函数，易于理解和维护"
+  
+  # 中等复杂度 (6-10): 适中复杂度，需要注意
+  medium:
+    min: 6
+    max: 10
+    level: "warning"
+    description: "适中复杂度，建议关注"
+  
+  # 高复杂度 (11-15): 复杂函数，建议重构
+  high:
+    min: 11
+    max: 15
+    level: "error"
+    description: "复杂函数，强烈建议重构"
+  
+  # 极高复杂度 (16+): 非常复杂，必须重构
+  very_high:
+    min: 16
+    max: 999
+    level: "critical"
+    description: "极其复杂，必须重构"
+
+# 文件和目录配置
+paths:
+  # 包含的路径
+  include:
+    - "cmd/**/*.go"
+    - "internal/**/*.go"
+    - "pkg/**/*.go"
+    - "*.go"
+  
+  # 排除的路径
+  exclude:
+    - "vendor/**"
+    - "**/*_test.go"
+    - "testdata/**"
+    - "examples/**"
+    - "docs/**"
+    - ".git/**"
+    - "scripts/**"
+
+# 函数类型特殊配置
+function_types:
+  # 测试函数允许更高的复杂度
+  test_functions:
+    pattern: "^Test.*|^Benchmark.*|^Example.*"
+    threshold: 15
+    description: "测试函数允许更高复杂度"
+  
+  # 初始化函数
+  init_functions:
+    pattern: "^init$"
+    threshold: 15
+    description: "初始化函数允许更高复杂度"
+  
+  # main函数
+  main_functions:
+    pattern: "^main$"
+    threshold: 15
+    description: "main函数允许更高复杂度"
+  
+  # 生成的代码
+  generated_functions:
+    pattern: ".*_generated\.go$"
+    threshold: 20
+    description: "生成的代码允许更高复杂度"
+
+# 报告配置
+reporting:
+  # 报告输出文件
+  output_file: "reports/gocyclo-report.txt"
+  
+  # JSON报告文件
+  json_output: "reports/gocyclo-report.json"
+  
+  # 是否生成HTML报告
+  html_report: true
+  html_output: "reports/gocyclo-report.html"
+  
+  # 报告模板
+  template: |
+    复杂度检查报告
+    ================
+    
+    检查时间: {{.Timestamp}}
+    总文件数: {{.TotalFiles}}
+    总函数数: {{.TotalFunctions}}
+    超过阈值函数数: {{.OverThresholdFunctions}}
+    
+    复杂度分布:
+    - 低复杂度 (1-5):   {{.LowComplexity}} 个
+    - 中等复杂度 (6-10): {{.MediumComplexity}} 个
+    - 高复杂度 (11-15):  {{.HighComplexity}} 个
+    - 极高复杂度 (16+):  {{.VeryHighComplexity}} 个
+    
+    需要关注的函数:
+    {{range .Functions}}
+    - {{.Name}} ({{.File}}:{{.Line}}) - 复杂度: {{.Complexity}}
+    {{end}}
+
+# 集成配置
+integration:
+  # CI/CD 配置
+  ci:
+    # 失败阈值 - 超过此复杂度的函数会导致CI失败
+    fail_threshold: 15
+    
+    # 警告阈值 - 超过此复杂度的函数会产生警告
+    warn_threshold: 10
+    
+    # 是否在CI中生成报告
+    generate_report: true
+    
+    # 是否将结果发送到代码审查工具
+    code_review_integration: true
+  
+  # IDE集成
+  ide:
+    # VS Code配置
+    vscode:
+      enabled: true
+      threshold: 10
+    
+    # GoLand配置
+    goland:
+      enabled: true
+      threshold: 10
+
+# 自定义规则
+custom_rules:
+  # 特殊文件的复杂度规则
+  special_files:
+    # 配置文件解析器允许更高复杂度
+    - pattern: "**/config/**/*.go"
+      threshold: 20
+      reason: "配置解析逻辑通常较复杂"
+    
+    # 数据库迁移文件
+    - pattern: "**/migrations/**/*.go"
+      threshold: 25
+      reason: "数据库迁移逻辑可能较复杂"
+    
+    # 第三方适配器
+    - pattern: "**/adapters/**/*.go"
+      threshold: 15
+      reason: "第三方适配器可能需要处理多种情况"
+
+# 建议配置
+recommendations:
+  # 重构建议
+  refactoring:
+    # 当复杂度超过阈值时的建议
+    suggestions:
+      - "考虑将大函数拆分为多个小函数"
+      - "使用策略模式替代复杂的if-else链"
+      - "考虑使用状态机模式处理复杂状态转换"
+      - "将复杂的业务逻辑提取到单独的服务中"
+      - "使用表驱动测试减少测试函数复杂度"
+    
+    # 重构优先级
+    priority:
+      critical: "立即重构 (复杂度 >= 20)"
+      high: "尽快重构 (复杂度 >= 15)"
+      medium: "计划重构 (复杂度 >= 10)"
+      low: "考虑重构 (复杂度 >= 8)"
+
+# 度量配置
+metrics:
+  # 是否收集度量数据
+  enabled: true
+  
+  # 度量数据输出文件
+  output: "reports/complexity-metrics.json"
+  
+  # 历史数据保留天数
+  retention_days: 30
+  
+  # 趋势分析
+  trend_analysis:
+    enabled: true
+    window_days: 7
+    alert_threshold: 0.2  # 复杂度增长超过20%时告警

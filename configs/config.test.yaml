@@ -1,0 +1,91 @@
+# 测试环境配置文件
+# 用于单元测试和集成测试
+
+# 应用程序配置
+app:
+  name: "HXL Cloud (Test)"
+  env: "test"
+  debug: true
+  port: 8081  # 使用不同端口避免冲突
+
+# 数据库配置 - 测试环境
+database:
+  driver: "sqlite3"  # 测试环境使用SQLite
+  host: ""
+  port: 0
+  username: ""
+  password: ""
+  database: ":memory:"  # 内存数据库，测试完自动清理
+  charset: "utf8mb4"
+  parse_time: true
+  max_idle_conns: 1
+  max_open_conns: 1
+
+# Redis配置 - 测试环境
+redis:
+  host: "localhost"
+  port: 6379
+  password: ""
+  db: 15  # 使用最后一个数据库进行测试
+  pool_size: 1
+  min_idle_conns: 1
+
+# JWT配置 - 测试环境
+jwt:
+  secret: "test-jwt-secret-key"
+  expire_time: 3600  # 1小时
+  refresh_expire_time: 7200  # 2小时
+  issuer: "HXL Cloud Test"
+
+# 日志配置 - 测试环境
+log:
+  level: "debug"
+  format: "text"
+  output: "stdout"
+
+# 文件存储配置 - 测试环境
+storage:
+  type: "local"
+  local:
+    upload_path: "test_uploads"
+    max_size: 1048576  # 1MB，测试环境限制较小
+    allowed_types: ["jpg", "png", "txt"]
+
+# 邮件配置 - 测试环境（模拟）
+email:
+  smtp_host: "localhost"
+  smtp_port: 1025
+  username: "test@example.com"
+  password: "test"
+  from_email: "test@hxlcloud.test"
+  from_name: "HXL Cloud Test"
+
+# 限流配置 - 测试环境
+rate_limit:
+  enabled: false  # 测试环境关闭限流
+
+# CORS配置 - 测试环境
+cors:
+  allowed_origins: ["*"]
+  allowed_methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+  allowed_headers: ["*"]
+  allow_credentials: true
+
+# 监控配置 - 测试环境
+monitoring:
+  enabled: false  # 测试环境关闭监控
+
+# 第三方服务配置 - 测试环境（模拟）
+third_party:
+  wechat:
+    app_id: "test_wechat_app_id"
+    app_secret: "test_wechat_app_secret"
+  alipay:
+    app_id: "test_alipay_app_id"
+    private_key: "test_alipay_private_key"
+    public_key: "test_alipay_public_key"
+  sms:
+    provider: "mock"
+    access_key: "test_access_key"
+    secret_key: "test_secret_key"
+    sign_name: "测试签名"

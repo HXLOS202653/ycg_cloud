@@ -1,0 +1,144 @@
+# Docker Compose 配置文件
+# 用于本地开发环境快速启动依赖服务
+
+version: '3.8'
+
+services:
+  # MySQL 数据库
+  mysql:
+    image: mysql:8.0
+    container_name: hxl_cloud_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: hxl_cloud_dev
+      MYSQL_USER: dev_user
+      MYSQL_PASSWORD: dev_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d
+    command: --default-authentication-plugin=mysql_native_password
+    networks:
+      - hxl_cloud_network
+
+  # Redis 缓存
+  redis:
+    image: redis:7-alpine
+    container_name: hxl_cloud_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - hxl_cloud_network
+
+  # Redis Commander (Redis 管理界面)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: hxl_cloud_redis_commander
+    restart: unless-stopped
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    networks:
+      - hxl_cloud_network
+
+  # phpMyAdmin (MySQL 管理界面)
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: hxl_cloud_phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: root123
+    ports:
+      - "8082:80"
+    depends_on:
+      - mysql
+    networks:
+      - hxl_cloud_network
+
+  # MailHog (邮件测试服务)
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: hxl_cloud_mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    networks:
+      - hxl_cloud_network
+
+  # Jaeger (分布式追踪)
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: hxl_cloud_jaeger
+    restart: unless-stopped
+    ports:
+      - "16686:16686"  # Web UI
+      - "14268:14268"  # HTTP collector
+    environment:
+      COLLECTOR_OTLP_ENABLED: true
+    networks:
+      - hxl_cloud_network
+
+  # Prometheus (监控)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: hxl_cloud_prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - hxl_cloud_network
+
+  # Grafana (监控面板)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: hxl_cloud_grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin123
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - hxl_cloud_network
+
+# 数据卷
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+# 网络
+networks:
+  hxl_cloud_network:
+    driver: bridge

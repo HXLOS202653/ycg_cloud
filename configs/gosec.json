@@ -1,0 +1,242 @@
+{
+  "global": {
+    "nosec": false,
+    "audit": true,
+    "confidence": "medium",
+    "severity": "medium",
+    "format": "json",
+    "output": "gosec-report.json",
+    "stdout": true,
+    "verbose": false,
+    "quiet": false
+  },
+  "rules": {
+    "G101": {
+      "description": "Look for hard coded credentials",
+      "enabled": true,
+      "severity": "high"
+    },
+    "G102": {
+      "description": "Bind to all interfaces",
+      "enabled": true,
+      "severity": "medium"
+    },
+    "G103": {
+      "description": "Audit the use of unsafe block",
+      "enabled": true,
+      "severity": "medium"
+    },
+    "G104": {
+      "description": "Audit errors not checked",
+      "enabled": true,
+      "severity": "low"
+    },
+    "G105": {
+      "description": "Audit the use of math/big.Int.Exp",
+      "enabled": true,
+      "severity": "medium"
+    },
+    "G106": {
+      "description": "Audit the use of ssh.InsecureIgnoreHostKey",
+      "enabled": true,
+      "severity": "high"
+    },
+    "G107": {
+      "description": "Url provided to HTTP request as taint input",
+      "enabled": true,
+      "severity": "medium"
+    },
+    "G108": {
+      "description": "Profiling endpoint automatically exposed on /debug/pprof",
+      "enabled": true,
+      "severity": "medium"
+    },
+    "G109": {
+      "description": "Potential Integer overflow made by strconv.Atoi result conversion to int16/32",
+      "enabled": true,
+      "severity": "medium"
+    },
+    "G110": {
+      "description": "Potential DoS vulnerability via decompression bomb",
+      "enabled": true,
+      "severity": "medium"
+    },
+    "G201": {
+      "description": "SQL query construction using format string",
+      "enabled": true,
+      "severity": "high"
+    },
+    "G202": {
+      "description": "SQL query construction using string concatenation",
+      "enabled": true,
+      "severity": "high"
+    },
+    "G203": {
+      "description": "Use of unescaped data in HTML templates",
+      "enabled": true,
+      "severity": "medium"
+    },
+    "G204": {
+      "description": "Audit use of command execution",
+      "enabled": true,
+      "severity": "high"
+    },
+    "G301": {
+      "description": "Poor file permissions used when creating a directory",
+      "enabled": true,
+      "severity": "medium"
+    },
+    "G302": {
+      "description": "Poor file permissions used with chmod",
+      "enabled": true,
+      "severity": "medium"
+    },
+    "G303": {
+      "description": "Creating tempfile using a predictable path",
+      "enabled": true,
+      "severity": "medium"
+    },
+    "G304": {
+      "description": "File path provided as taint input",
+      "enabled": true,
+      "severity": "medium"
+    },
+    "G305": {
+      "description": "File traversal when extracting zip/tar archive",
+      "enabled": true,
+      "severity": "medium"
+    },
+    "G306": {
+      "description": "Poor file permissions used when writing to a new file",
+      "enabled": true,
+      "severity": "medium"
+    },
+    "G307": {
+      "description": "Deferring a method which returns an error",
+      "enabled": true,
+      "severity": "low"
+    },
+    "G401": {
+      "description": "Detect the usage of DES, RC4, MD5 or SHA1",
+      "enabled": true,
+      "severity": "high"
+    },
+    "G402": {
+      "description": "Look for bad TLS connection settings",
+      "enabled": true,
+      "severity": "high"
+    },
+    "G403": {
+      "description": "Ensure minimum RSA key length of 2048 bits",
+      "enabled": true,
+      "severity": "medium"
+    },
+    "G404": {
+      "description": "Insecure random number source (rand)",
+      "enabled": true,
+      "severity": "medium"
+    },
+    "G501": {
+      "description": "Import blocklist: crypto/md5",
+      "enabled": true,
+      "severity": "medium"
+    },
+    "G502": {
+      "description": "Import blocklist: crypto/des",
+      "enabled": true,
+      "severity": "medium"
+    },
+    "G503": {
+      "description": "Import blocklist: crypto/rc4",
+      "enabled": true,
+      "severity": "medium"
+    },
+    "G504": {
+      "description": "Import blocklist: net/http/cgi",
+      "enabled": true,
+      "severity": "medium"
+    },
+    "G505": {
+      "description": "Import blocklist: crypto/sha1",
+      "enabled": true,
+      "severity": "medium"
+    },
+    "G601": {
+      "description": "Implicit memory aliasing of items from a range statement",
+      "enabled": true,
+      "severity": "medium"
+    }
+  },
+  "exclude": {
+    "paths": [
+      "vendor/*",
+      "tests/*",
+      "*_test.go",
+      "testdata/*",
+      "examples/*",
+      "docs/*"
+    ],
+    "rules": {
+      "G104": {
+        "description": "Exclude G104 for test files and specific patterns",
+        "patterns": [
+          "*_test.go",
+          "testdata/*"
+        ]
+      },
+      "G204": {
+        "description": "Allow command execution in specific contexts",
+        "patterns": [
+          "scripts/*",
+          "cmd/tools/*"
+        ]
+      }
+    }
+  },
+  "include": {
+    "paths": [
+      "cmd/*",
+      "internal/*",
+      "pkg/*",
+      "*.go"
+    ]
+  },
+  "nosec": {
+    "description": "Configuration for #nosec comments",
+    "enabled": true,
+    "audit": true
+  },
+  "output": {
+    "formats": [
+      "json",
+      "text",
+      "sarif"
+    ],
+    "template": {
+      "text": "[{{.Severity}}] {{.RuleID}}: {{.What}} (Confidence: {{.Confidence}}, Severity: {{.Severity}})\n  File: {{.File}}:{{.Line}}\n  Code: {{.Code}}"
+    }
+  },
+  "custom_rules": {
+    "hardcoded_secrets": {
+      "description": "检测硬编码的密钥和敏感信息",
+      "patterns": [
+        "(?i)(password|passwd|pwd)\\s*[:=]\\s*['\"][^'\"\\s]{8,}['\"]?",
+        "(?i)(secret|key|token|api_key)\\s*[:=]\\s*['\"][^'\"\\s]{16,}['\"]?",
+        "(?i)(private_key|priv_key)\\s*[:=]\\s*['\"][^'\"\\s]{32,}['\"]?",
+        "(?i)(access_token|auth_token)\\s*[:=]\\s*['\"][^'\"\\s]{20,}['\"]?"
+      ],
+      "severity": "high",
+      "confidence": "medium"
+    },
+    "sql_injection": {
+      "description": "检测潜在的SQL注入漏洞",
+      "patterns": [
+        "(?i)query\\s*\\+\\s*['\"].*['\"]\\s*\\+",
+        "(?i)fmt\\.Sprintf\\s*\\(\\s*['\"].*%[sv].*['\"]\\s*,",
+        "(?i)db\\.Exec\\s*\\(\\s*['\"].*\\+.*['\"]\\s*\\)"
+      ],
+      "severity": "high",
+      "confidence": "high"
+    }
+  }
+}
